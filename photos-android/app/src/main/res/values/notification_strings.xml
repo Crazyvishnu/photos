@@ -1,0 +1,11 @@
+<resources>
+    <string name="backup_notification_channel">Photo and video backup</string>
+    <string name="backup_notification_counts">%1$d finished &#183; %2$d remaining</string>
+    <string name="backup_notification_failed">%1$d need retry</string>
+    <string name="backup_notification_transfer">%1$d%% &#183; %2$s of %3$s</string>
+    <string name="backup_notification_retry">Backup waiting to retry</string>
+    <string name="backup_notification_finished">Current backup finished</string>
+    <string name="backup_original_quality">Original quality</string>
+    <string name="backup_notifications_title">Backup notifications</string>
+    <string name="backup_notifications_detail">Allow progress, finished and remaining counts in notifications.</string>
+</resources>

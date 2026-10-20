@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+    android:background="@color/background">
+    <FrameLayout android:layout_width="match_parent" android:layout_height="64dp">
+        <LinearLayout android:id="@+id/normal_toolbar" android:layout_width="match_parent" android:layout_height="match_parent"
+            android:gravity="center_vertical" android:paddingHorizontal="20dp">
+            <TextView android:id="@+id/library_title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="Photos" android:textColor="@color/text_primary" android:textSize="26sp" android:fontFamily="sans-serif-medium"/>
+            <ImageView android:id="@+id/open_bin" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp"
+                android:src="@android:drawable/ic_menu_delete" app:tint="@color/text_primary" android:contentDescription="Open Bin"
+                android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true"/>
+            <ImageView android:id="@+id/btn_account" android:layout_width="48dp" android:layout_height="48dp" android:padding="6dp"
+                android:src="@drawable/ic_account_circle" android:contentDescription="Manage linked accounts"
+                android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true"/>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/cab_toolbar" android:layout_width="match_parent" android:layout_height="match_parent"
+            android:gravity="center_vertical" android:paddingHorizontal="12dp" android:visibility="gone" android:background="@color/surface">
+            <ImageView android:id="@+id/btn_close_cab" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp"
+                android:src="@android:drawable/ic_menu_close_clear_cancel" app:tint="@color/text_primary" android:contentDescription="Clear selection"/>
+            <TextView android:id="@+id/tv_cab_title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:textColor="@color/text_primary" android:textSize="20sp"/>
+            <ImageView android:id="@+id/share_selected" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp" android:src="@android:drawable/ic_menu_share" app:tint="@color/accent" android:contentDescription="Share selected items" android:clickable="true" android:focusable="true"/>
+            <ImageView android:id="@+id/bin_selected" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp" android:src="@android:drawable/ic_menu_delete" app:tint="@color/accent" android:contentDescription="Move selected items to Bin" android:clickable="true" android:focusable="true"/>
+            <ImageView android:id="@+id/btn_add_album" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp" android:src="@drawable/ic_album" app:tint="@color/accent" android:contentDescription="Add selected items to album"/>
+            <ImageView android:id="@+id/btn_backup_now" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp"
+                android:src="@android:drawable/stat_sys_upload" app:tint="@color/accent" android:contentDescription="Back up selected photos"/>
+        </LinearLayout>
+    </FrameLayout>
+    <com.google.android.material.textfield.TextInputLayout android:id="@+id/search_container" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp" app:boxBackgroundMode="filled" app:boxBackgroundColor="@color/surface"
+        app:boxCornerRadiusTopStart="28dp" app:boxCornerRadiusTopEnd="28dp" app:boxCornerRadiusBottomStart="28dp" app:boxCornerRadiusBottomEnd="28dp"
+        app:boxStrokeWidth="0dp" app:boxStrokeWidthFocused="0dp" app:hintEnabled="false">
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/search_photos" android:layout_width="match_parent"
+            android:layout_height="56dp" android:hint="Search your photos by name" android:singleLine="true" android:inputType="text"
+            android:paddingHorizontal="20dp" android:background="@android:color/transparent" android:textSize="16sp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+    <com.google.android.material.card.MaterialCardView android:id="@+id/backup_card" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp" android:layout_marginTop="12dp" app:cardCornerRadius="20dp" app:strokeWidth="0dp" app:cardElevation="0dp" app:cardBackgroundColor="@color/surface">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+                <LinearLayout android:id="@+id/backup_details" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:minHeight="48dp" android:orientation="horizontal" android:gravity="center_vertical"
+                    android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true">
+                    <ImageView android:id="@+id/backup_summary_icon" android:layout_width="28dp" android:layout_height="28dp"
+                        android:layout_marginEnd="12dp" android:src="@drawable/ic_backup_upload" app:tint="@color/accent" android:importantForAccessibility="no"/>
+                    <TextView android:id="@+id/backup_title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                        android:text="@string/backup_checking_library" android:textColor="@color/text_primary" android:textSize="16sp" android:fontFamily="sans-serif-medium"/>
+                </LinearLayout>
+                <com.google.android.material.button.MaterialButton android:id="@+id/backup_action" style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content" android:layout_height="48dp" android:minWidth="0dp" android:text="@string/backup_action_start" android:paddingHorizontal="12dp"/>
+            </LinearLayout>
+            <TextView android:id="@+id/backup_detail" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary" android:textSize="12sp" android:maxLines="3" android:ellipsize="end"/>
+            <com.google.android.material.progressindicator.LinearProgressIndicator android:id="@+id/backup_progress" android:layout_width="match_parent"
+                android:layout_height="4dp" android:layout_marginTop="12dp" android:max="1000" android:progress="0" app:trackCornerRadius="2dp"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+    <HorizontalScrollView android:id="@+id/filters_container" android:layout_width="match_parent" android:layout_height="wrap_content" android:scrollbars="none" android:fillViewport="true">
+        <com.google.android.material.chip.ChipGroup android:id="@+id/backup_filters" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp" android:paddingTop="8dp" app:singleLine="true" app:singleSelection="true" app:selectionRequired="true" app:checkedChip="@id/filter_all">
+            <com.google.android.material.chip.Chip android:id="@+id/filter_all" style="@style/Widget.Material3.Chip.Filter" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/backup_filter_all" android:checked="true"/>
+            <com.google.android.material.chip.Chip android:id="@+id/filter_done" style="@style/Widget.Material3.Chip.Filter" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/backup_backed_up"/>
+            <com.google.android.material.chip.Chip android:id="@+id/filter_uploading" style="@style/Widget.Material3.Chip.Filter" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/backup_filter_uploading"/>
+            <com.google.android.material.chip.Chip android:id="@+id/filter_waiting" style="@style/Widget.Material3.Chip.Filter" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/backup_waiting"/>
+            <com.google.android.material.chip.Chip android:id="@+id/filter_not_done" style="@style/Widget.Material3.Chip.Filter" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/backup_not_done"/>
+            <com.google.android.material.chip.Chip android:id="@+id/filter_failed" style="@style/Widget.Material3.Chip.Filter" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/backup_failed"/>
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+    <TextView android:id="@+id/tv_cloud_status" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:minHeight="32dp" android:gravity="center_vertical" android:paddingHorizontal="20dp" android:textSize="12sp"
+        android:textColor="@color/text_secondary" android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true"/>
+    <TextView android:id="@+id/btn_media_access" android:layout_width="match_parent" android:layout_height="48dp"
+        android:text="Manage access to device photos" android:gravity="center_vertical" android:paddingHorizontal="20dp" android:textColor="@color/accent"
+        android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true"/>
+    <FrameLayout android:id="@+id/photo_content" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/recycler_view" android:layout_width="match_parent" android:layout_height="match_parent"
+            android:clipToPadding="false" android:paddingBottom="16dp" android:paddingEnd="40dp" android:scrollbars="none"/>
+        <FrameLayout android:id="@+id/fast_scroll_track" android:layout_width="48dp" android:layout_height="match_parent"
+            android:layout_gravity="end" android:visibility="gone" android:clickable="true" android:focusable="true"
+            android:contentDescription="@string/gallery_fast_scroll">
+            <View android:layout_width="2dp" android:layout_height="match_parent" android:layout_gravity="center_horizontal" android:background="@color/accent_light"/>
+            <FrameLayout android:id="@+id/fast_scroll_handle" android:layout_width="48dp" android:layout_height="64dp" android:background="@drawable/bg_scroll_handle">
+                <ImageView android:layout_width="24dp" android:layout_height="32dp" android:layout_gravity="center" android:src="@drawable/ic_scroll_grip" android:importantForAccessibility="no"/>
+            </FrameLayout>
+        </FrameLayout>
+        <TextView android:id="@+id/tv_fast_scroll_date" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_gravity="end|center_vertical" android:layout_marginEnd="56dp" android:background="@drawable/bg_fast_scroll_bubble"
+            android:padding="12dp" android:textColor="@color/white" android:visibility="gone"/>
+        <TextView android:id="@+id/tv_empty" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_gravity="center" android:padding="32dp" android:gravity="center" android:visibility="gone"
+            android:text="Your memories belong here\n\nLink your Google accounts to see backed up photos, or allow access to photos on this device."
+            android:textColor="@color/text_secondary" android:textSize="16sp"/>
+    </FrameLayout>
+    <FrameLayout android:id="@+id/collections_container" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:visibility="gone"/>
+    <com.google.android.material.bottomnavigation.BottomNavigationView android:id="@+id/library_navigation"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@color/surface"
+        app:menu="@menu/library_navigation" app:labelVisibilityMode="labeled"/>
+</LinearLayout>

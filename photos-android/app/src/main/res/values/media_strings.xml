@@ -1,0 +1,24 @@
+<resources>
+    <string name="media_details">Details</string>
+    <string name="gallery_fast_scroll">Scroll through dates. Drag up or down.</string>
+    <string name="media_info">Photo or video details</string>
+    <string name="media_close">Close</string>
+    <string name="media_loading">Loading details…</string>
+    <string name="media_metadata_unavailable">Some details are unavailable. Check photo permissions or your connection.</string>
+    <string name="media_on_device">On this device</string>
+    <string name="media_in_cloud">In your cloud library</string>
+    <string name="media_backup_account">Backup account</string>
+    <string name="media_no_backup_account">No cloud copy confirmed yet</string>
+    <string name="media_resolution">%1$d × %2$d pixels</string>
+    <string name="media_duration">Duration: %1$s</string>
+    <string name="media_retry_load">Tap to try loading this item again</string>
+    <string name="media_load_error">Unable to open this item. Check photo access or your connection.</string>
+    <string name="media_video_error">Unable to play this video. Check access, connection, or video format.</string>
+    <string name="media_play">Play %1$s</string>
+    <string name="media_share">Share</string>
+    <string name="mobile_data_title">Use mobile data for backup</string>
+    <string name="mobile_data_detail">Back up photos and videos using Wi-Fi or mobile data.</string>
+    <string name="backup_folders_detail">Automatic camera backup runs while backup is enabled. Use Back up now to include all accessible device folders.</string>
+    <string name="crash_report_title">Last crash report</string>
+    <string name="crash_report_empty">No crash report has been recorded by this version.</string>
+</resources>

@@ -1,0 +1,18 @@
+<resources>
+    <color name="background">#141218</color>
+    <color name="surface">#28232D</color>
+    <color name="card_surface">#211D25</color>
+    <color name="accent">#EFB4F4</color>
+    <color name="on_accent">#4A0050</color>
+    <color name="backup_success">#8ED59C</color>
+    <color name="backup_success_surface">#163B23</color>
+    <color name="backup_waiting">#E9CC71</color>
+    <color name="backup_waiting_surface">#3A3010</color>
+    <color name="backup_idle_surface">#333038</color>
+    <color name="backup_error_surface">#57251F</color>
+    <color name="accent_light">#56315E</color>
+    <color name="text_primary">#EAE0EA</color>
+    <color name="text_secondary">#CDC2CE</color>
+    <color name="error">#FFB4AB</color>
+    <color name="success">#8ED59C</color>
+</resources>

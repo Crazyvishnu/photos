@@ -1,0 +1,6 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_photos" android:icon="@drawable/ic_photos" android:title="Photos"/>
+    <item android:id="@+id/nav_albums" android:icon="@drawable/ic_album" android:title="Collections"/>
+    <item android:id="@+id/nav_cloud" android:icon="@drawable/ic_cloud_done" android:title="Cloud library"/>
+    <item android:id="@+id/nav_device" android:icon="@drawable/ic_device" android:title="On device"/>
+</menu>

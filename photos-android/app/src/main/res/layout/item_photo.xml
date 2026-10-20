@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="1dp"
+    android:background="@color/background">
+
+    <ImageView
+        android:id="@+id/image_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="Photo" />
+
+    <!-- Video duration indicator -->
+    <ImageView
+        android:id="@+id/video_indicator"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="6dp"
+        android:src="@drawable/ic_play_circle"
+        android:visibility="gone" />
+
+    <LinearLayout android:id="@+id/backup_badge" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical" android:paddingHorizontal="6dp" android:paddingVertical="4dp"
+        android:layout_margin="4dp" android:background="@drawable/bg_backup_badge"
+        app:layout_constrainedWidth="true" app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintBottom_toBottomOf="parent"
+        android:importantForAccessibility="noHideDescendants">
+        <ImageView android:id="@+id/backup_indicator" android:layout_width="14dp" android:layout_height="14dp"/>
+        <ProgressBar android:id="@+id/backup_spinner" style="?android:attr/progressBarStyleSmall"
+            android:layout_width="14dp" android:layout_height="14dp" android:indeterminateTint="@color/accent" android:visibility="gone"/>
+        <TextView android:id="@+id/backup_label" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="4dp" android:textSize="10sp" android:fontFamily="sans-serif-medium" android:maxLines="1" android:ellipsize="end"/>
+    </LinearLayout>
+    <!-- Selection Overlay (Dark transparent layer) -->
+    <View
+        android:id="@+id/selection_overlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#66000000"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Selection Checkmark -->
+    <ImageView
+        android:id="@+id/selection_check"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_margin="8dp"
+        android:src="@android:drawable/checkbox_on_background"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

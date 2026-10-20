@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Camera lens / photo icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,34 C43,34 34,43 34,54 C34,65 43,74 54,74 C65,74 74,65 74,54 C74,43 65,34 54,34z
+                          M54,68 C46.3,68 40,61.7 40,54 C40,46.3 46.3,40 54,40 C61.7,40 68,46.3 68,54 C68,61.7 61.7,68 54,68z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,46 C50.1,46 47,49.1 47,53 C47,56.9 50.1,60 54,60 C57.9,60 61,56.9 61,53 C61,49.1 57.9,46 54,46z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,30 L70,30 C72.2,30 74,31.8 74,34 L74,36 C74,38.2 72.2,40 70,40 L38,40 C35.8,40 34,38.2 34,36 L34,34 C34,31.8 35.8,30 38,30z"/>
+</vector>

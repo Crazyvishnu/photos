@@ -1,0 +1,40 @@
+<resources>
+    <color name="viewer_surface">#FFFFFF</color>
+    <color name="viewer_ink">#444746</color>
+    <color name="viewer_text">#202124</color>
+    <style name="ThemeOverlay.PhotosApp.Viewer" parent="ThemeOverlay.Material3">
+        <item name="colorPrimary">@color/viewer_ink</item>
+        <item name="colorOnPrimary">@color/viewer_surface</item>
+        <item name="colorSurface">@color/viewer_surface</item>
+        <item name="colorOnSurface">@color/viewer_text</item>
+        <item name="colorOnSurfaceVariant">@color/viewer_ink</item>
+    </style>
+    <style name="ViewerAction" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/viewer_text</item>
+        <item name="iconTint">@color/viewer_ink</item>
+        <item name="iconSize">24dp</item>
+        <item name="iconPadding">8dp</item>
+        <item name="iconGravity">textTop</item>
+        <item name="android:paddingHorizontal">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <string name="viewer_share">Share</string>
+    <string name="viewer_edit">Edit</string>
+    <string name="viewer_add_to">Add to</string>
+    <string name="viewer_bin">Bin</string>
+    <string name="viewer_fullscreen">Full screen</string>
+    <string name="viewer_capture">Save as photo</string>
+    <string name="viewer_date_action">View or edit capture date</string>
+    <string name="viewer_play">Play video</string>
+    <string name="viewer_pause">Pause video</string>
+    <string name="viewer_seek">Video position</string>
+    <string name="viewer_mute">Mute</string>
+    <string name="viewer_unmute">Unmute</string>
+    <string name="viewer_show_controls">Show media controls</string>
+    <string name="viewer_hide_controls">Hide media controls</string>
+    <string name="viewer_playback_time">%1$s / %2$s</string>
+</resources>

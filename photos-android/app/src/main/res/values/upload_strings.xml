@@ -1,0 +1,17 @@
+<resources>
+    <string name="backup_error_local_file">The file on this phone cannot be read. Check photo/video access and make sure this original opens on the phone, then retry.</string>
+    <string name="backup_error_phone_space">The phone has run out of working storage. Free some device space and retry. Your original has not been deleted.</string>
+    <string name="backup_error_network_resume">The connection was interrupted. Retry will keep confirmed upload progress and resume it where Google Drive allows.</string>
+    <string name="backup_error_timeout">The upload connection timed out. Retry will use smaller chunks and resume confirmed progress.</string>
+    <string name="backup_error_dns">Google Drive could not be reached. Check internet access or your VPN, then retry.</string>
+    <string name="backup_error_tls">A secure connection to Google Drive failed. Check the phone date/time, internet access or VPN, then retry.</string>
+    <string name="backup_error_source_changed">The original changed while backup was running. Close any editor or camera recording and retry this item.</string>
+    <string name="backup_error_drive_detail">Google Drive rejected the upload (HTTP %1$d, %2$s). %3$s</string>
+    <string name="backup_error_protocol">Google Drive has not confirmed the completed file (%1$s). Retry to check the saved upload session.</string>
+    <string name="backup_retry_failed">Retry failed</string>
+    <string name="backup_error_samples">Failed items (up to 10):</string>
+    <string name="backup_retry_failed_title">Retry failed backups</string>
+    <string name="backup_retry_failed_detail">Retry unfinished photos and videos now; keep saved upload sessions.</string>
+    <string name="backup_retry_requested">Retry requested. Open Photos to see progress.</string>
+    <string name="backup_internal_detail">Backup could not finish (%1$s). Retry this item; include this code if it fails again.</string>
+</resources>

@@ -1,0 +1,83 @@
+[versions]
+# Matched to versions already cached on this machine
+agp             = "9.3.0"
+kotlin          = "2.2.10"
+ksp             = "2.3.5"
+
+# AndroidX
+coreKtx         = "1.13.1"
+appcompat       = "1.7.0"
+material        = "1.12.0"
+constraintlayout= "2.1.4"
+lifecycle       = "2.8.4"
+activity        = "1.9.1"
+fragment        = "1.8.2"
+splashscreen    = "1.0.1"
+browser         = "1.8.0"
+datastore       = "1.1.1"
+workmanager     = "2.9.1"
+room            = "2.6.1"
+paging          = "3.3.2"
+
+# DI
+hilt            = "2.56"
+hiltWork        = "1.2.0"
+
+# Network
+retrofit        = "2.11.0"
+okhttp          = "4.12.0"
+
+# Image
+coil            = "2.7.0"
+
+[libraries]
+# Core
+core-ktx              = { group = "androidx.core",             name = "core-ktx",                   version.ref = "coreKtx"         }
+appcompat             = { group = "androidx.appcompat",        name = "appcompat",                  version.ref = "appcompat"       }
+material              = { group = "com.google.android.material",name = "material",                  version.ref = "material"        }
+constraintlayout      = { group = "androidx.constraintlayout", name = "constraintlayout",           version.ref = "constraintlayout"}
+activity-ktx          = { group = "androidx.activity",         name = "activity-ktx",               version.ref = "activity"        }
+fragment-ktx          = { group = "androidx.fragment",         name = "fragment-ktx",               version.ref = "fragment"        }
+splashscreen          = { group = "androidx.core",             name = "core-splashscreen",          version.ref = "splashscreen"    }
+browser               = { group = "androidx.browser",          name = "browser",                    version.ref = "browser"         }
+
+# Lifecycle
+lifecycle-viewmodel   = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+lifecycle-runtime     = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx",   version.ref = "lifecycle" }
+lifecycle-livedata    = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx",  version.ref = "lifecycle" }
+
+# Hilt DI
+hilt-android          = { group = "com.google.dagger",  name = "hilt-android",         version.ref = "hilt"     }
+hilt-compiler         = { group = "com.google.dagger",  name = "hilt-android-compiler", version.ref = "hilt"    }
+hilt-work             = { group = "androidx.hilt",      name = "hilt-work",            version.ref = "hiltWork" }
+hilt-work-compiler    = { group = "androidx.hilt",      name = "hilt-compiler",        version.ref = "hiltWork" }
+
+# WorkManager
+workmanager-ktx       = { group = "androidx.work",      name = "work-runtime-ktx", version.ref = "workmanager" }
+
+# Network
+retrofit              = { group = "com.squareup.retrofit2", name = "retrofit",            version.ref = "retrofit" }
+retrofit-gson         = { group = "com.squareup.retrofit2", name = "converter-gson",      version.ref = "retrofit" }
+okhttp                = { group = "com.squareup.okhttp3",   name = "okhttp",             version.ref = "okhttp"   }
+okhttp-logging        = { group = "com.squareup.okhttp3",   name = "logging-interceptor", version.ref = "okhttp"  }
+
+# Room (local sync state only)
+room-runtime          = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx              = { group = "androidx.room", name = "room-ktx",     version.ref = "room" }
+room-compiler         = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# DataStore
+datastore             = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+
+# Image loading
+coil                  = { group = "io.coil-kt", name = "coil", version.ref = "coil" }
+
+# Paging
+paging-runtime        = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
+
+[plugins]
+android-application   = { id = "com.android.application",              version.ref = "agp"    }
+kotlin-android        = { id = "org.jetbrains.kotlin.android",         version.ref = "kotlin" }
+kotlin-parcelize      = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
+hilt                  = { id = "com.google.dagger.hilt.android",       version.ref = "hilt"   }
+ksp                   = { id = "com.google.devtools.ksp",              version.ref = "ksp"    }

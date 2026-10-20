@@ -1,0 +1,25 @@
+<resources>
+    <string name="share_receiving">Receiving your photos and videos</string>
+    <string name="share_receiving_detail">Keep this screen open while the files are copied. Cloud-only files may need time to download.</string>
+    <string name="share_received">Added to Photos App</string>
+    <string name="share_failed">Could not receive these files</string>
+    <string name="share_retry_detail">Share the actual photos or videos again, rather than a link. Check your internet connection and available phone storage.</string>
+    <string name="share_connect_detail">Saved on this device. Open Photos App and link a Google account from the profile menu, then tap Back up now.</string>
+    <string name="share_backup_queued">Backup is queued. Open Photos App to see progress. Original dates are used when available; otherwise the date shared is used. You can edit the date in Details.</string>
+    <string name="share_queue_failed">Files received so far are saved on this device. Open Photos App and tap Back up now to retry backup.</string>
+    <string name="share_counts">%1$d of %2$d received · %3$d failed</string>
+    <string name="share_open_app">Open Photos App</string>
+    <string name="edit_date_time">Edit date and time</string>
+    <string name="date_save">Save</string>
+    <string name="date_cancel">Cancel</string>
+    <string name="date_zone">Time zone: %1$s</string>
+    <string name="date_fallback">Original date unavailable. Using the date shared; you can edit it.</string>
+    <string name="date_edited">Date and time edited</string>
+    <string name="date_pending">Date updated on this device. Cloud sync is pending.</string>
+    <string name="date_save_failed">Could not save the date. Please try again.</string>
+    <string name="date_invalid">Choose a valid date and time in this time zone.</string>
+    <string name="shared_folder">Shared to Photos App</string>
+    <string name="date_choose">Choose date</string>
+    <string name="date_edit_scope">This changes the timeline in Photos App and its cloud backup. The original file stays unchanged.</string>
+    <string name="time_choose">Choose time</string>
+</resources>

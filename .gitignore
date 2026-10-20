@@ -1,0 +1,45 @@
+# Android and Gradle output
+**/.gradle/
+**/.kotlin/
+**/build/
+**/.cxx/
+**/.externalNativeBuild/
+**/captures/
+**/out/
+*.apk
+*.aab
+*.ap_
+*.hprof
+
+# Machine-specific configuration and IDE state
+**/local.properties
+.idea/
+**/.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Private configuration, signing keys and runtime data
+.env
+.env.*
+!.env.example
+**/keystore.properties
+**/signing.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+**/google-services.json
+**/client_secret*.json
+**/credentials*.json
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# Local work notes and agent configuration
+/local-notes/
+/.agents/
+/.codex/
