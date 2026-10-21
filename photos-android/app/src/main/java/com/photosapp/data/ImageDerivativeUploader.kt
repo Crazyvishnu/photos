@@ -73,6 +73,25 @@ object ImageDerivativeUploader {
         markComplete(context, email, originalId)
     }
 
+    suspend fun deleteLinked(context: Context, email: String, originalId: String) {
+        val api = ServiceLocator.getApiForAccount(email)
+        val ids = try {
+            val file = api.getFile(originalId)
+            listOf(file.appProperties?.get(GRID_KEY), file.appProperties?.get(SCREEN_KEY)).filterNotNull()
+        } catch (_: Exception) {
+            emptyList()
+        }
+        for (id in ids) {
+            try {
+                val response = api.deleteFile(id)
+                response.body()?.close(); response.errorBody()?.close()
+            } catch (_: Exception) {
+                // Original deletion is authoritative; orphan cleanup can be retried manually if needed.
+            }
+        }
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove("$email|$originalId").apply()
+    }
+
     private suspend fun findExisting(email: String, originalId: String, kind: String): String? {
         val q = "appProperties has { key='library' and value='$MARKER' } and appProperties has { key='originalId' and value='$originalId' } and appProperties has { key='kind' and value='$kind' } and trashed=false"
         return ServiceLocator.getApiForAccount(email).searchFiles(q, pageSize = 10).files.firstOrNull()?.id
