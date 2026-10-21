@@ -90,6 +90,9 @@ interface ApiService {
         @Query("pageSize") pageSize: Int = 1000
     ): DriveFileList
 
+    @POST("upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,size,appProperties,trashed")
+    suspend fun uploadDerivative(@Body body: RequestBody): DriveFile
+
     @POST("upload/drive/v3/files?uploadType=resumable&fields=id,name,size,appProperties,trashed")
     suspend fun startUpload(
         @Body metadata: RequestBody,
