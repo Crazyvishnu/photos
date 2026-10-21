@@ -3,6 +3,7 @@ package com.photosapp.worker
 import android.content.Context
 import androidx.work.*
 import com.photosapp.data.MediaMutationLock
+import com.photosapp.data.ImageDerivativeUploader
 import com.photosapp.di.ServiceLocator
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
@@ -29,6 +30,7 @@ class MediaActionsWorker(context: Context, params: WorkerParameters) : Coroutine
                     val api = ServiceLocator.getApiForAccount(email)
                     when (entry.pendingAction) {
                         "DELETE" -> {
+                            ImageDerivativeUploader.deleteLinked(applicationContext, email, id)
                             val result = api.deleteFile(id)
                             if (!result.isSuccessful && result.code() != 404) throw retrofit2.HttpException(result)
                             result.body()?.close(); result.errorBody()?.close()
