@@ -42,7 +42,7 @@ To use another project, set `VITE_GOOGLE_CLIENT_ID` in an untracked `.env.local`
 - Filename/account/date search; month, account and media-type filters; comfortable/compact grids; newest/oldest order.
 - Multi-account connection, actual Drive quotas and Google storage links.
 - Original-byte uploads, chunked hashing in a Web Worker, content-hash duplicate checks, saved resumable sessions and progress/pause/retry.
-- Instant thumbnail-to-screen-preview loading: the viewer requests an adaptive ~1.2K–2.5K Drive preview sized for the current display and does not start a full camera-original download in parallel. Originals load only on explicit request, while the next screen preview is warmed in the background. Left/right photo areas navigate; the center toggles controls in white/black view.
+- Google-Photos-style progressive loading: the timeline warms up to 600 Drive thumbnails in the background with visible tiles taking priority. Opening a photo shows the cached/Drive preview immediately and automatically downloads/upgrades to the authenticated original; after the current original finishes, adjacent photo originals are prefetched for faster swiping. There is no separate Load original step. Left/right photo areas navigate; the center toggles controls in white/black view.
 - Image viewer, original downloads, Google Drive video previews, favorites and editable timeline dates.
 - Bulk selection, custom albums, automatic collections, Bin, restoration and confirmed permanent deletion.
 - Light/dark/system appearance, backup badges, upload destination, optional minute refresh, keyboard shortcuts and metadata-index export.
