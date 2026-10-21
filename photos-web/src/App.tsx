@@ -22,6 +22,8 @@ export function Viewer({media,index,items,close,onMove,onAction,busy,previews=ph
   useEffect(()=>()=>previews.stop(),[previews]);
   useEffect(()=>{const previous=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.body.style.overflow=previous;};},[]);
   const [immersive,setImmersive]=useState(false),[details,setDetails]=useState(false),[attempt,setAttempt]=useState(0);
+  const [sharp,setSharp]=useState({key:'',url:''});
+  useEffect(()=>{if(video||!media.thumbnailLink)return;let active=true;const image=new Image();image.referrerPolicy='no-referrer';image.fetchPriority='high';image.onload=()=>{if(active)setSharp({key:identity,url:image.src});};image.src=media.thumbnailLink.replace(/=s\d+(?:-[a-z]+)?$/i,'=s1600');return()=>{active=false;image.onload=null;image.src='';};},[identity,media.thumbnailLink,video]);
   const [original,setOriginal]=useState({key:'',url:''}),[decoded,setDecoded]=useState(''),[error,setError]=useState({key:'',text:''});
   const url=original.key===identity?original.url:previews.peek(media);
   const message=error.key===identity?error.text:'';
@@ -37,6 +39,7 @@ export function Viewer({media,index,items,close,onMove,onAction,busy,previews=ph
   return <Dialog title={media.name} className={`viewer ${immersive?'immersive':''}`} close={close}><div className="viewer-toolbar"><IconButton label="Back to library" onClick={close}><ArrowLeft/></IconButton><button className="date-button" onClick={()=>onAction(media,'date')} disabled={busy}><strong>{new Date(capturedAt(media)).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'})}</strong><small>{new Date(capturedAt(media)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</small></button><div className="spacer"/><IconButton label={favorite(media)?'Remove favorite':'Add favorite'} disabled={busy} onClick={()=>onAction(media,'favorite')}><Star fill={favorite(media)?'currentColor':'none'}/></IconButton><IconButton label="Photo details" onClick={()=>setDetails(!details)}><Info/></IconButton></div>
     <div className="viewer-canvas">{video?<div className="video-canvas">{url?<video key={identity+url} src={url} controls playsInline autoPlay onError={()=>setError({key:identity,text:"This video format is not supported by your browser. Open it in Drive or download the original."})}/>:<p role="status">Loading video securely...</p>}{message&&<div className="preview-notice" role="alert">{message}<button onClick={retry}>Retry video</button></div>}</div>:<div className="image-canvas">
       <Thumbnail media={media} className="viewer-thumbnail-layer"/>
+      {sharp.key===identity&&sharp.url&&<img className="viewer-original ready" src={sharp.url} alt={media.name} referrerPolicy="no-referrer"/>}
       {url&&<img key={url} className={`viewer-original ${decoded===url?'ready':''}`} src={url} alt={media.name} decoding="async" onLoad={()=>setDecoded(url)} onError={()=>setError({key:identity,text:'This browser could not display the original format. You can still download it or open it in Drive.'})}/>}
 
       <button className="viewer-hit previous" aria-label="Previous photo (left side)" disabled={index<=0} onClick={()=>onMove(items[index-1])}/>
