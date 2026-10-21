@@ -35,7 +35,7 @@ export class ThumbnailCache {
   }
 
   private touch(key:string,e:Entry){this.entries.delete(key);this.entries.set(key,e);}
-  private remove(key:string,e:Entry){if(this.entries.get(key)!==e)return;this.entries.delete(key);this.queue=this.queue.filter(x=>x!==e);if(!e.image){e.controller.abort();e.reject(new DOMException('Thumbnail left the viewport','AbortError'));}}
+  private remove(key:string,e:Entry){if(this.entries.get(key)!==e)return;this.entries.delete(key);this.queue=this.queue.filter(x=>x!==e);if(e.image?.dataset.objectUrl)URL.revokeObjectURL(e.image.dataset.objectUrl);if(!e.image){e.controller.abort();e.reject(new DOMException('Thumbnail left the viewport','AbortError'));}}
   private trim(){let bytes=0,count=0;for(const e of this.entries.values())if(e.image){bytes+=e.image.naturalWidth*e.image.naturalHeight*4;count++;}for(const [key,e] of this.entries){if(bytes<=this.budget&&count<=this.capacity)break;if(e.image&&!e.users){bytes-=e.image.naturalWidth*e.image.naturalHeight*4;count--;this.remove(key,e);}}}
   private schedule(){if(this.scheduled)return;this.scheduled=true;queueMicrotask(()=>{this.scheduled=false;this.pump();});}
   private pump(){
@@ -46,9 +46,10 @@ export class ThumbnailCache {
   }
 }
 
-function readBlobImage(blob:Blob,signal:AbortSignal,priority:number):Promise<HTMLImageElement>{
+async function readBlobImage(blob:Blob,signal:AbortSignal,priority:number):Promise<HTMLImageElement>{
   const url=URL.createObjectURL(blob);
-  return readImage(url,signal,priority).finally(()=>URL.revokeObjectURL(url));
+  try{const image=await readImage(url,signal,priority);image.dataset.objectUrl=url;return image;}
+  catch(e){URL.revokeObjectURL(url);throw e;}
 }
 function readImage(url:string,signal:AbortSignal,priority:number):Promise<HTMLImageElement>{
   return new Promise((resolve,reject)=>{
