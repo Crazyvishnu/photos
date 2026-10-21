@@ -6,6 +6,7 @@ import android.provider.MediaStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.room.withTransaction
 import com.photosapp.data.api.ApiService
 import com.photosapp.data.api.StorageQuota
 import com.photosapp.data.local.db.SyncDao
@@ -161,27 +162,43 @@ class HomeViewModel(
         if (name.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
             val id = java.util.UUID.randomUUID().toString()
-            ServiceLocator.db.albumDao().save(com.photosapp.data.local.db.Album(id, name))
-            addToAlbum(id, uris)
+            ServiceLocator.db.withTransaction {
+                ServiceLocator.db.albumDao().save(com.photosapp.data.local.db.Album(id, name))
+                addToAlbum(id, uris)
+            }
             withContext(Dispatchers.Main) { onCreated(id) }
         }
     }
     suspend fun addToAlbum(id: String, uris: Set<String>) {
         val selected = photos.value.filter { it.uri.toString() in uris }
-        ServiceLocator.db.albumDao().add(selected.flatMap { photo ->
-            listOfNotNull(photo.uri.toString(), photo.remoteKey).distinct().map {
-                com.photosapp.data.local.db.AlbumMember(id, it)
-            }
-        })
+        ServiceLocator.db.withTransaction {
+            ServiceLocator.db.albumDao().add(selected.flatMap { photo ->
+                listOfNotNull(photo.uri.toString(), photo.remoteKey).distinct().map {
+                    com.photosapp.data.local.db.AlbumMember(id, it)
+                }
+            })
+            com.photosapp.data.AlbumSyncRepository.mark(id)
+        }
+        com.photosapp.worker.AlbumSyncWorker.enqueue(appContext)
     }
     fun viewModelScopeLaunchAdd(id: String, uris: Set<String>, done: () -> Unit) = viewModelScope.launch(Dispatchers.IO) {
         addToAlbum(id, uris); clearSelection(); withContext(Dispatchers.Main) { done() }
     }
     fun deleteAlbum(album: AlbumCollection) = viewModelScope.launch(Dispatchers.IO) {
-        if (album.automatic) ServiceLocator.prefs.hideAlbum(album.id) else ServiceLocator.db.albumDao().delete(album.id)
+        if (album.automatic) ServiceLocator.prefs.hideAlbum(album.id) else {
+            ServiceLocator.db.withTransaction {
+                ServiceLocator.db.albumDao().delete(album.id)
+                com.photosapp.data.AlbumSyncRepository.mark(album.id, true)
+            }
+            com.photosapp.worker.AlbumSyncWorker.enqueue(appContext)
+        }
     }
     fun removeFromAlbum(id: String, photo: LocalPhoto) = viewModelScope.launch(Dispatchers.IO) {
-        ServiceLocator.db.albumDao().remove(id, listOfNotNull(photo.uri.toString(), photo.remoteKey))
+        ServiceLocator.db.withTransaction {
+            ServiceLocator.db.albumDao().remove(id, listOfNotNull(photo.uri.toString(), photo.remoteKey))
+            com.photosapp.data.AlbumSyncRepository.mark(id)
+        }
+        com.photosapp.worker.AlbumSyncWorker.enqueue(appContext)
     }
 
     val backupSummary = combine(photos, runtime, mediaLoaded, accountList) { items, work, loaded, accounts ->
@@ -198,6 +215,7 @@ class HomeViewModel(
     val cloudMessage = _cloudMessage.asStateFlow()
     private var refreshJob: kotlinx.coroutines.Job? = null
     fun refreshCloud() {
+        com.photosapp.worker.AlbumSyncWorker.enqueue(appContext)
         com.photosapp.worker.MediaActionsWorker.enqueue(appContext)
         com.photosapp.worker.DateSyncWorker.enqueue(appContext)
         if (refreshJob?.isActive == true) return

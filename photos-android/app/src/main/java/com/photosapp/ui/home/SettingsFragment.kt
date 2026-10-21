@@ -89,7 +89,10 @@ class SettingsFragment : Fragment() {
         }
         section("About")
         row("Last crash report", "View or share the most recent app crash.") { showCrash() }
-        row("Photos App ${com.photosapp.BuildConfig.VERSION_NAME}", "Original-quality backups to your linked Google Drive accounts. Custom album lists are saved on this device.") {}
+        row("Photos App ${com.photosapp.BuildConfig.VERSION_NAME}", "Original-quality Drive backups. Custom albums sync with Photos web when the owning accounts are connected.") {}
+        row("Photos on the web", "Open your shared library in a browser.") {
+            startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://crazyvishnu.github.io/photos/")))
+        }
     }
     private suspend fun schedule() {
         if (prefs.backupPaused.first() || prefs.localMode.first()) return

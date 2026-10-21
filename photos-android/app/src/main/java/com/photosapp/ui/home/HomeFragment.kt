@@ -64,6 +64,14 @@ class HomeFragment : Fragment() {
         vm.loadStatus()
         vm.loadPhotos()
         vm.refreshCloud()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    kotlinx.coroutines.delay(60_000)
+                    if (!com.photosapp.di.ServiceLocator.prefs.localMode.first()) vm.refreshCloud()
+                }
+            }
+        }
         binding.tvCloudStatus.setOnClickListener { vm.refreshCloud(); vm.loadStatus() }
         binding.btnMediaAccess.setOnClickListener { requestMediaPermissions() }
         binding.backupDetails.setOnClickListener { showBackupDetails() }

@@ -1,4 +1,5 @@
 package com.photosapp.worker
+import androidx.room.withTransaction
 
 import android.content.Context
 import android.net.Uri
@@ -239,6 +240,11 @@ class BackupWorker(context: Context, params: WorkerParameters) : CoroutineWorker
         db.libraryStateDao().linkBackup(item.uri.toString(), email, id)
         val key = "drive:$email:$id"
         db.albumDao().linkBackup(item.uri.toString(), key)
+        val affectedAlbums = db.albumDao().albumsFor(key)
+        if (affectedAlbums.isNotEmpty()) {
+            db.withTransaction { affectedAlbums.forEach { com.photosapp.data.AlbumSyncRepository.mark(it) } }
+            AlbumSyncWorker.enqueue(applicationContext)
+        }
         db.mediaDateDao().linkBackup(item.uri.toString(), key)
         if (db.mediaDateDao().get(item.uri.toString()) != null) DateSyncWorker.enqueue(applicationContext)
         if (db.libraryStateDao().isHidden(item.uri.toString()) || db.libraryStateDao().favorite(item.uri.toString()) != null) MediaActionsWorker.enqueue(applicationContext)

@@ -16,7 +16,7 @@ class Converters {
     fun toSyncState(value: String): SyncState = enumValueOf<SyncState>(value)
 }
 
-@Database(entities = [SyncStatus::class, GoogleAccount::class, CloudMedia::class, Album::class, AlbumMember::class, SharedMedia::class, MediaDate::class, CloudCursor::class, MediaHash::class, MediaFavorite::class, TrashEntry::class, TrashAlias::class, UploadSession::class], version = 8, exportSchema = false)
+@Database(entities = [SyncStatus::class, GoogleAccount::class, CloudMedia::class, Album::class, AlbumMember::class, SharedMedia::class, MediaDate::class, CloudCursor::class, MediaHash::class, MediaFavorite::class, TrashEntry::class, TrashAlias::class, UploadSession::class, AlbumCloudState::class], version = 9, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun syncDao(): SyncDao
@@ -27,6 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun mediaDateDao(): MediaDateDao
     abstract fun libraryStateDao(): LibraryStateDao
     abstract fun uploadSessionDao(): UploadSessionDao
+    abstract fun albumCloudDao(): AlbumCloudDao
 
     companion object {
         @Volatile
@@ -79,6 +80,11 @@ abstract class AppDatabase : RoomDatabase() {
                 }, object : androidx.room.migration.Migration(7, 8) {
                     override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                         db.execSQL("CREATE TABLE IF NOT EXISTS upload_sessions (localUri TEXT NOT NULL, accountEmail TEXT NOT NULL, sha256 TEXT NOT NULL, size INTEGER NOT NULL, fileId TEXT NOT NULL, sessionUrl TEXT, createdAt INTEGER NOT NULL, PRIMARY KEY(localUri))")
+                    }
+                }, object : androidx.room.migration.Migration(8, 9) {
+                    override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                        db.execSQL("CREATE TABLE IF NOT EXISTS album_cloud_state (id TEXT NOT NULL, updatedAt INTEGER NOT NULL, pending INTEGER NOT NULL, deleted INTEGER NOT NULL, email TEXT, fileId TEXT, PRIMARY KEY(id))")
+                        db.execSQL("INSERT INTO album_cloud_state(id, updatedAt, pending, deleted) SELECT id, 0, 1, 0 FROM albums")
                     }
                 })
                 .build()

@@ -10,6 +10,12 @@
 *.aab
 *.ap_
 *.hprof
+**/node_modules/
+**/dist/
+**/coverage/
+**/*.tsbuildinfo
+**/playwright-report/
+**/test-results/
 
 # Machine-specific configuration and IDE state
 **/local.properties

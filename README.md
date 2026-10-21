@@ -6,12 +6,16 @@ The interface is inspired by Google Photos. This is an independent app; its back
 
 | Project | Current configuration |
 | --- | --- |
-| App version | 1.7.1, version code 10 |
+| App version | Android 2.0.0 (code 11), Web 2.0.0 |
 | Android package | `com.photosapp` |
 | Minimum Android version | Android 8.0 / API 26 |
 | Compile / target SDK | API 35 |
 | UI | Kotlin, XML views, Material Components, View Binding |
 | Storage | Google Drive originals, Room index, DataStore preferences |
+
+## Web version
+
+The repository now includes [Photos web](photos-web/README.md), a responsive React/TypeScript app using the same Drive library. It supports search/filtering, original uploads, favorites, date edits, Bin, account storage, settings and shared custom albums with Android 2.0. Run `npm ci`, `npm test` and `npm run build` inside `photos-web`. The included Pages workflow targets `https://crazyvishnu.github.io/photos/`; hosting and Google OAuth origins must be enabled before live sign-in. See the web README for exact configuration and browser limits.
 
 ## Contents
 
@@ -182,7 +186,7 @@ Manual full-device backup scans all accessible photos/videos; scheduled backup f
 
 Cloud originals stream when opened; rebuilding the index does not download the entire library. Unlinking an account hides its cloud-only items without deleting them from Drive.
 
-Recovery covers cloud originals and supported app metadata. Custom album definitions, hidden automatic albums, preferences, local Bin bookkeeping and unfinished upload sessions are device-local. Reinstalling does not restore those settings.
+Recovery covers cloud originals and supported app metadata. Android 2.0 syncs custom album definitions and backed-up members through private Drive JSON manifests. Hidden automatic albums, preferences, local Bin bookkeeping, unbacked album members and unfinished upload sessions remain device-local. Reinstalling does not restore that device-only state.
 
 ## Import older Google Photos media
 
@@ -239,7 +243,7 @@ Notifications count an accessible-device-file snapshot. New media added after th
 | Restore | Restores the app item and requests cloud-copy restoration where applicable. |
 | Delete permanently | Deletes selected device/private copies and app cloud backups; Android requests device-deletion approval where required. |
 
-Cloud Bin retention is controlled by Google Drive. Device-local Bin state is not a separate durable copy. Custom album membership is stored on the device and is not synchronized as a shared album service.
+Cloud Bin retention is controlled by Google Drive. Device-local Bin state is not a separate durable copy. Android 2.0 and web sync custom albums using versioned manifests and deletion tombstones. Only backed-up members have portable identities. There is no public album-sharing/group-membership service; reconnect the album-owning account to edit it.
 
 ## Architecture
 
@@ -264,7 +268,7 @@ flowchart TD
 | `data/DriveResumableUploader.kt` | Chunk transfer, acknowledgments, recovery and confirmation |
 | `data/UploadSource.kt` | Buffered reads and range access |
 | `data/CloudLibraryRepository.kt` | Listings, incremental changes and cloud index |
-| `data/local/db` | Room entities, DAOs and migrations; current schema version 8 |
+| `data/local/db` | Room entities, DAOs and migrations; current schema version 9 |
 | `data/local/PrefsRepository.kt` | DataStore settings |
 | `di/ServiceLocator.kt` | Per-account Drive clients, token cache and file-ID pool |
 | `worker/MediaActionsWorker.kt`, `DateSyncWorker.kt` | Pending cloud Bin/favorite/date operations |
@@ -326,7 +330,7 @@ Room caches account/library metadata and resumable session URLs on the device. R
 
 ## Validation and known limitations
 
-The latest local Windows verification for 1.7.1 completed `:app:assembleDebug` and `:app:lintDebug` with **BUILD SUCCESSFUL**: **0 lint errors and 205 warnings**. APK signing/package checks confirmed `com.photosapp`, version code 10 and version 1.7.1. Existing warnings include deprecated account APIs and UI/resource issues; this is an actively developed app rather than a production-certified release.
+The latest local Windows verification for 2.0.0 completed `:app:assembleDebug` and `:app:lintDebug` with **BUILD SUCCESSFUL**: **0 lint errors and 206 warnings**. APK signing/package checks confirmed `com.photosapp`, version code 11 and version 2.0.0. Existing warnings include deprecated account APIs and UI/resource issues; this is an actively developed app rather than a production-certified release.
 
 No connected phone or installed emulator was available for live validation. ARTEMIS diagnostics also reported missing local LLM credentials. No executable UI tests were authored without the required prior device exploration. Successful phone uploads, exact viewer appearance, reinstall recovery and two-device synchronization still need hardware verification.
 
@@ -335,10 +339,18 @@ Before relying on a release, verify on authorized devices: first upload; large-v
 Other current limits:
 
 - No automatic import of an entire existing Google Photos library.
-- No cloud-synced custom albums, group membership service, face recognition or global duplicate lock.
+- No group membership service, face recognition or global duplicate lock. Album conflict resolution uses timestamps, so simultaneous edits can still race.
 - No full Takeout sidecar/album migration or OCR document classification.
 - Local-only state and unfinished sessions do not survive uninstall/app-data removal.
 - Shared private copies need sufficient phone storage; receiving a batch is not a streaming cloud-to-cloud transfer.
 - Deprecated account APIs need migration before production distribution.
 
 See the [app module notes](photos-android/README.md) for a concise build reference.
+
+## Shared albums and web sync (2.0)
+
+Room migration 8 -> 9 retains existing records and adds a durable album synchronization journal. Existing local custom albums are queued for export; local-only members stay on the device until backed up. Private Drive JSON manifests use the separate `photosapp.albums.v1` marker, stable Drive member keys and deletion tombstones. The newest timestamp wins; edits are not collaborative transactions. Unlinking an album owner prevents changes to that manifest until reconnection.
+
+Android refreshes cloud media while its home screen is active every minute; the web app refreshes while visible when enabled in settings. Both also support manual refresh. Pending album writes use one unique worker rather than queuing a worker per media file. The phone build preserves its signing certificate for updating existing installations.
+
+Web validation: 12 automated checks passed for hashing, ranges, metadata, cursor failure handling and deletion guards; TypeScript and Vite production build passed. The welcome/settings/album error states and theme persistence were inspected in the browser. These checks use mocked API data; live OAuth, transfer CORS and phone/web round trips still require explicit account authorization and hardware verification.

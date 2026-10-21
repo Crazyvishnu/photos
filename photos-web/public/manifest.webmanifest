@@ -1,0 +1,1 @@
+{"name":"Photos App","short_name":"Photos","start_url":"./","scope":"./","display":"standalone","background_color":"#f8fafd","theme_color":"#f8fafd","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}

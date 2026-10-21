@@ -57,6 +57,9 @@ data class UserInfoResponse(
 )
 
 interface ApiService {
+    @GET("drive/v3/files/{fileId}?alt=media") suspend fun albumDocument(@Path("fileId") id: String): okhttp3.ResponseBody
+    @POST("upload/drive/v3/files?uploadType=multipart&fields=id") suspend fun createAlbumDocument(@Body body: RequestBody): DriveFile
+    @PATCH("upload/drive/v3/files/{fileId}?uploadType=multipart&fields=id") suspend fun writeAlbumDocument(@Path("fileId") id: String, @Body body: RequestBody): DriveFile
     @GET("drive/v3/files/generateIds?space=drive&type=files&fields=ids") suspend fun generateFileId(@Query("count") count: Int = 16): DriveGeneratedIds
     @GET("drive/v3/changes/startPageToken") suspend fun startPageToken(): DriveStartToken
     @GET("drive/v3/changes") suspend fun changes(@Query("pageToken") pageToken: String,

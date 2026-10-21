@@ -11,6 +11,9 @@ data class AlbumMember(val albumId: String, val mediaKey: String)
 
 @Dao
 abstract class AlbumDao {
+    @Query("SELECT * FROM albums") abstract fun all(): List<Album>
+    @Query("SELECT * FROM album_members WHERE albumId = :id") abstract fun members(id: String): List<AlbumMember>
+    @Query("SELECT DISTINCT albumId FROM album_members WHERE mediaKey = :key") abstract fun albumsFor(key: String): List<String>
     @Query("SELECT * FROM albums ORDER BY createdAt DESC")
     abstract fun observeAlbums(): Flow<List<Album>>
     @Query("SELECT * FROM album_members")
