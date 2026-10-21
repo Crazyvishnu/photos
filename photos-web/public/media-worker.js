@@ -69,8 +69,11 @@ self.addEventListener('fetch',event=>{
 
   // Drive can hide Content-Range from JavaScript. Rebuild it from the exact capped range we sent.
   if(upstream.status===206&&!output.has('Content-Range')&&parsed){
-   output.set('Content-Range',`bytes ${parsed.start}-${parsed.end}/${total}`);
-   if(!output.has('Content-Length'))output.set('Content-Length',String(parsed.end-parsed.start+1));
+   const visibleLength=Number(output.get('Content-Length'));
+   const actualEnd=Number.isSafeInteger(visibleLength)&&visibleLength>0
+    ?Math.min(parsed.end,parsed.start+visibleLength-1):parsed.end;
+   output.set('Content-Range',`bytes ${parsed.start}-${actualEnd}/${total}`);
+   if(!output.has('Content-Length'))output.set('Content-Length',String(actualEnd-parsed.start+1));
   }
   if(upstream.status===206&&!output.has('Accept-Ranges'))output.set('Accept-Ranges','bytes');
   output.set('Cache-Control','no-store');
