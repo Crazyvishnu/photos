@@ -38,9 +38,11 @@ To use another project, set `VITE_GOOGLE_CLIENT_ID` in an untracked `.env.local`
 
 ## Features
 
+- The complete timeline is available in one continuous scroll, without a Show more button. Thumbnail requests and off-screen day rendering stay lazy.
 - Filename/account/date search; month, account and media-type filters; comfortable/compact grids; newest/oldest order.
 - Multi-account connection, actual Drive quotas and Google storage links.
 - Original-byte uploads, chunked hashing in a Web Worker, content-hash duplicate checks, saved resumable sessions and progress/pause/retry.
+- Instant available-thumbnail fallback while originals download, bounded session-only original caching, and adjacent-photo prefetch. Left/right photo areas navigate; the center toggles controls in white/black view.
 - Image viewer, original downloads, Google Drive video previews, favorites and editable timeline dates.
 - Bulk selection, custom albums, automatic collections, Bin, restoration and confirmed permanent deletion.
 - Light/dark/system appearance, backup badges, upload destination, optional minute refresh, keyboard shortcuts and metadata-index export.
@@ -58,6 +60,7 @@ Album conflict resolution uses the newest timestamp. It is not collaborative edi
 
 - Keep the tab open during uploads. After reload, reconnect all accounts and reselect the same files to resume saved sessions. The website cannot continuously back up a phone gallery while closed.
 - Access tokens are memory-only. Account identities, library metadata and resumable session URLs are cached in IndexedDB on this device; removing an account clears its displayed library cache. Upload-session records remain private in this browser so unfinished originals can resume after reconnection.
+- Preview originals are kept only in a bounded in-memory cache (64 MiB / 8 items, with the active photo retained). Removing an account clears its cached originals. No photo bytes are persisted into browser storage. First-time cloud retrieval still depends on connection speed; available thumbnails remain visible during the transfer, and failed originals have a retry action.
 - Original files are not persisted into browser storage. Chunking changes transfer boundaries, never image/video bytes. Photo EXIF dates are used when supported; otherwise file modification time is labelled as the fallback and can be edited.
 - Google Photos cloud-only items must first be shared/downloaded/exported as actual files. This is a Google Drive library, not an automatic Google Photos migration.
 - Private thumbnails use Drive-provided short-lived URLs and may expire or be blocked. The original can still be opened after reconnecting. Full-image previews are capped at 100 MB; large files open through Drive.
@@ -75,7 +78,7 @@ A subdomain of a domain you already own is another option. A separate custom reg
 
 ## Verification
 
-The local browser was used to inspect the welcome screen, settings, theme selection and reload persistence. Automated web tests cover original hashes, Drive acknowledgments, ordering, album identities, token destination checks, cursor atomicity and deletion guards. They mock Drive responses; passing them is not evidence of a real account upload.
+The local browser was used to inspect the welcome screen, settings, theme selection and reload persistence. A local fixture with deliberately delayed original downloads verified immediate thumbnails, left/right navigation, and navigation with controls hidden. An automated rendering check covers all 4,450 media items without pagination; cache tests cover deduplication, transfer priority, memory eviction, retry and cancellation. Automated web tests cover original hashes, Drive acknowledgments, ordering, album identities, token destination checks, cursor atomicity and deletion guards. They mock Drive responses; passing them is not evidence of a real account upload.
 
 Live OAuth, uploads, browser CORS behavior and Android/web round trips require the allowed origins and user authorization, followed by verification with a disposable test file. No private photo is uploaded or permanently deleted as an automatic test.
 

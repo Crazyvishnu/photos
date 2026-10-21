@@ -61,9 +61,12 @@ export async function saveAlbum(album:Album):Promise<Album>{
   const path=`upload/drive/v3/files${album.fileId?`/${id}`:''}?uploadType=multipart&fields=id`;
   await json(album.email,path,{method:album.fileId?'PATCH':'POST',headers:{'Content-Type':`multipart/related; boundary=${boundary}`},body});return {...updated,fileId:id};
 }
-export async function downloadImage(m:Media,signal:AbortSignal):Promise<string>{
+export async function downloadImage(m:Media,signal:AbortSignal):Promise<{url:string;bytes:number}>{
   if(Number(m.size)>100*1024*1024)throw new Error('This image is too large for an in-browser preview. Open it in Drive.');
-  const response=await checked(await request(m.email,`drive/v3/files/${encodeURIComponent(m.id)}?alt=media`,{},signal));
-  return URL.createObjectURL(await response.blob());
+  const deadline=AbortSignal.timeout(30000);
+  try{
+    const response=await checked(await request(m.email,`drive/v3/files/${encodeURIComponent(m.id)}?alt=media`,{},AbortSignal.any([signal,deadline])));
+    const blob=await response.blob();return {url:URL.createObjectURL(blob),bytes:blob.size};
+  }catch(e){if(deadline.aborted)throw new Error('The original is taking too long to download. Retry or open it in Drive.');throw e;}
 }
 export function allConnected(accounts:Account[]){return accounts.length>0&&accounts.every(a=>connected(a.email));}
