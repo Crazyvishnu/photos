@@ -1,5 +1,9 @@
 export const MEDIA_MARKER = 'photosapp.library.v1';
 export const ALBUM_MARKER = 'photosapp.albums.v1';
+export const DERIVATIVE_MARKER = 'photosapp.derivative.v1';
+export const DERIVATIVE_VERSION = '1';
+export const GRID_DERIVATIVE_KEY = 'gridDerivativeId';
+export const SCREEN_DERIVATIVE_KEY = 'screenDerivativeId';
 export interface DriveFile { id: string; name: string; mimeType: string; size?: string; createdTime?: string; thumbnailLink?: string; trashed?: boolean; appProperties?: Record<string,string>; imageMediaMetadata?: { width?: number; height?: number; time?: string }; videoMediaMetadata?: { durationMillis?: string }; }
 export interface Media extends DriveFile { email: string }
 export interface Account { email: string; name: string; picture?: string; limit: number | null; usage: number }
