@@ -1,5 +1,5 @@
 import { checked, fields, json, listing, request } from './drive';
-import { DERIVATIVE_MARKER, DERIVATIVE_VERSION, GRID_DERIVATIVE_KEY, SCREEN_DERIVATIVE_KEY, type DriveFile, type Media } from './model';
+import { DERIVATIVE_FOLDER_MARKER, DERIVATIVE_MARKER, DERIVATIVE_VERSION, GRID_DERIVATIVE_KEY, SCREEN_DERIVATIVE_KEY, type DriveFile, type Media } from './model';
 
 type Kind='grid'|'screen';
 type Derivative={kind:Kind;blob:Blob};
@@ -26,6 +26,12 @@ export async function makeImageDerivatives(file:Blob):Promise<Derivative[]>{
 async function findExisting(email:string,originalId:string,kind:Kind,signal:AbortSignal):Promise<string|undefined>{
   const q=\`appProperties has { key='library' and value='\${DERIVATIVE_MARKER}' } and appProperties has { key='originalId' and value='\${originalId}' } and appProperties has { key='kind' and value='\${kind}' } and trashed=false\`;
   return (await listing(email,q))[0]?.id;
+}
+async function ensureFolder(email:string,signal:AbortSignal):Promise<string>{
+  const q=`mimeType='application/vnd.google-apps.folder' and appProperties has { key='library' and value='${DERIVATIVE_FOLDER_MARKER}' } and trashed=false`;
+  const existing=(await listing(email,q))[0];if(existing)return existing.id;
+  const metadata={name:'Photos App optimized previews',mimeType:'application/vnd.google-apps.folder',appProperties:{library:DERIVATIVE_FOLDER_MARKER,version:DERIVATIVE_VERSION}};
+  return (await json<DriveFile>(email,'drive/v3/files?fields=id,name,mimeType,appProperties',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(metadata)},signal)).id;
 }
 async function uploadDerivative(email:string,originalId:string,kind:Kind,blob:Blob,signal:AbortSignal):Promise<string>{
   const id=(await json<{ids:string[]}>(email,'drive/v3/files/generateIds?count=1&space=drive&type=files',{},signal)).ids[0];
