@@ -10,7 +10,7 @@ export class PreviewCache {
   private queue:Entry[]=[];
   private active=0;
   private pinned='';
-  constructor(private loader:(m:Media,s:AbortSignal)=>Promise<Preview>,private revoke:(url:string)=>void=URL.revokeObjectURL,private budget=64*1024*1024,private maxEntries=8){}
+  constructor(private loader:(m:Media,s:AbortSignal)=>Promise<Preview>,private revoke:(url:string)=>void=URL.revokeObjectURL,private budget=96*1024*1024,private maxEntries=8){}
   peek(m:Media){const key=keyOf(m);const entry=this.entries.get(key);if(entry?.value){this.touch(key,entry);return entry.value.url;}return '';}
   focus(m:Media,neighbors:Media[]){
     this.pinned=keyOf(m);
@@ -26,7 +26,7 @@ export class PreviewCache {
     entry={media:m,promise,resolve,reject,controller:new AbortController(),started:false};
     this.entries.set(key,entry);if(priority)this.queue.unshift(entry);else this.queue.push(entry);this.pump();return promise;
   }
-  prefetch(m:Media){if(this.queue.length<2&&m.mimeType.startsWith('image/')&&Number(m.size||0)<=12*1024*1024)void this.get(m,false).catch(()=>{});}
+  prefetch(m:Media){if(this.queue.length<2&&m.mimeType.startsWith('image/')&&Number(m.size||0)<=24*1024*1024)void this.get(m,false).catch(()=>{});}
   release(){this.pinned='';this.trim();}
   stop(){for(const [key,e] of this.entries)if(!e.value)this.remove(key,e);}
   clear(email?:string,id?:string){for(const [key,e] of this.entries)if((!email||e.media.email===email)&&(!id||e.media.id===id))this.remove(key,e);}
