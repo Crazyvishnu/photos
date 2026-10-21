@@ -16,7 +16,6 @@ android {
         versionCode = 12
         versionName = "2.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "BASE_URL", "\"http://192.168.137.1:3000\"")
     }
 
     buildTypes {
