@@ -107,6 +107,9 @@ interface ApiService {
         @Body bytes: RequestBody
     ): retrofit2.Response<okhttp3.ResponseBody>
 
+    @POST("drive/v3/files?fields=id,name,mimeType,appProperties")
+    suspend fun createMetadataFile(@Body body: RequestBody): DriveFile
+
     // Create a folder
     @Multipart
     @POST("drive/v3/files")
