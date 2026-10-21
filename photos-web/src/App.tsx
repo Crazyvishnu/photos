@@ -1,4 +1,5 @@
 import { videoStream } from './video-stream';
+import { screenPreviewPixels, screenPreviewUrl } from './screen-preview';
 import { classifyVideoError, drivePreviewUrl, fallbackForStreamError } from './video-playback';
 import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Image as ImageIcon, Cloud, CloudUpload, Images, Star, Video, Monitor, FileText, Trash2, Settings2, Search, Plus, X, Check, RefreshCw, HardDrive, ArrowLeft, ArrowRight, Download, Info, CalendarDays, CheckCircle2, Pause, Play, ExternalLink, Menu, LogOut, Sun, HelpCircle, AlertCircle, FolderPlus, MoreHorizontal, Link2 } from 'lucide-react';
@@ -25,10 +26,24 @@ export function Viewer({media,index,items,close,onMove,onAction,busy,previews=ph
   useEffect(()=>{const previous=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.body.style.overflow=previous;};},[]);
   const [immersive,setImmersive]=useState(false),[details,setDetails]=useState(false),[attempt,setAttempt]=useState(0);
   const [sharp,setSharp]=useState({key:'',url:''});
-  useEffect(()=>{if(video||!media.thumbnailLink)return;let active=true;const image=new Image();image.referrerPolicy='no-referrer';image.fetchPriority='high';image.onload=()=>{if(active)setSharp({key:identity,url:image.src});};image.src=media.thumbnailLink.replace(/=s\d+(?:-[a-z]+)?$/i,'=s1600');return()=>{active=false;image.onload=null;image.src='';};},[identity,media.thumbnailLink,video]);
-  const [original,setOriginal]=useState({key:'',url:''}),[decoded,setDecoded]=useState(''),[error,setError]=useState({key:'',text:''});
+  useEffect(()=>{
+    if(video||!media.thumbnailLink)return;
+    let active=true;
+    const pixels=screenPreviewPixels(window.innerWidth,window.innerHeight,window.devicePixelRatio);
+    const image=new Image();image.referrerPolicy='no-referrer';image.fetchPriority='high';
+    image.onload=()=>{if(!active)return;setSharp({key:identity,url:image.src});
+      const next=items[index+1]||items[index-1];
+      if(next?.thumbnailLink&&!next.mimeType.startsWith('video/')){
+        const warm=new Image();warm.referrerPolicy='no-referrer';warm.src=screenPreviewUrl(next.thumbnailLink,pixels);
+      }
+    };
+    image.onerror=()=>{if(active)setError({key:identity,text:'Could not load the screen preview. Retry or load the original.'});};
+    image.src=screenPreviewUrl(media.thumbnailLink,pixels);
+    return()=>{active=false;image.onload=null;image.onerror=null;image.src='';};
+  },[identity,media.thumbnailLink,video,index,items,attempt]);
+  const [original,setOriginal]=useState({key:'',url:''}),[decoded,setDecoded]=useState(''),[error,setError]=useState({key:'',text:''}),[originalLoading,setOriginalLoading]=useState(false);
   const [videoFallback,setVideoFallback]=useState({key:'',text:''});
-  const url=original.key===identity?original.url:previews.peek(media);
+  const url=original.key===identity?original.url:'';
   const message=error.key===identity?error.text:'';
   const usingDrivePreview=videoFallback.key===identity;
   const showDriveFallback=(text:string)=>{setError({key:identity,text});setVideoFallback({key:identity,text});};
@@ -41,17 +56,25 @@ export function Viewer({media,index,items,close,onMove,onAction,busy,previews=ph
       showDriveFallback(`${errorText(e)} Google Drive preview is the final fallback. If Chrome asks, allow necessary cookies or use Open in Drive.`);
     }
   };
+  const loadOriginalPhoto=async()=>{
+    if(video||originalLoading||original.key===identity)return;
+    setOriginalLoading(true);setError({key:'',text:''});
+    try{const p=await previews.get(media);setOriginal({key:identity,url:p.url});}
+    catch(e){setError({key:identity,text:errorText(e)});}
+    finally{setOriginalLoading(false);}
+  };
   useEffect(()=>{
-    let active=true;const neighbors=items.slice(Math.max(0,index-1),index+2).filter(m=>keyOf(m)!==identity);
+    let active=true;
+    if(!video){previews.focus(media,[]);return()=>{active=false;previews.release();};}
+    const neighbors=items.slice(Math.max(0,index-1),index+2).filter(m=>keyOf(m)!==identity);
     previews.focus(media,neighbors);
-    void (video?videoStream(media).then(url=>({url,bytes:0})):previews.get(media)).then(p=>{if(active){setVideoFallback({key:'',text:''});setError({key:'',text:''});setOriginal({key:identity,url:p.url});for(const n of neighbors)previews.prefetch(n);}}).catch(e=>{if(!active)return;if(video){const failure=fallbackForStreamError(e);void loadDownloadedVideo(failure.message);}else setError({key:identity,text:errorText(e)});});
-
+    void videoStream(media).then(url=>({url,bytes:0})).then(p=>{if(active){setVideoFallback({key:'',text:''});setError({key:'',text:''});setOriginal({key:identity,url:p.url});}}).catch(e=>{if(!active)return;const failure=fallbackForStreamError(e);void loadDownloadedVideo(failure.message);});
     return()=>{active=false;previews.release();};
   },[identity,video,index,items,attempt,previews]);
   useEffect(()=>{function key(e:KeyboardEvent){if(e.target instanceof HTMLInputElement)return;if(e.key==='ArrowLeft'&&index>0){e.preventDefault();onMove(items[index-1]);}if(e.key==='ArrowRight'&&index<items.length-1){e.preventDefault();onMove(items[index+1]);}}window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[index,items,onMove]);
-  const retry=()=>{previews.clear(media.email,media.id);setVideoFallback({key:'',text:''});setOriginal({key:'',url:''});setDecoded('');setError({key:'',text:''});setAttempt(n=>n+1);};
+  const retry=()=>{previews.clear(media.email,media.id);setVideoFallback({key:'',text:''});setOriginal({key:'',url:''});setDecoded('');setError({key:'',text:''});setOriginalLoading(false);setAttempt(n=>n+1);};
   return <Dialog title={media.name} className={`viewer ${immersive?'immersive':''}`} close={close}><div className="viewer-toolbar"><IconButton label="Back to library" onClick={close}><ArrowLeft/></IconButton><button className="date-button" onClick={()=>onAction(media,'date')} disabled={busy}><strong>{new Date(capturedAt(media)).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'})}</strong><small>{new Date(capturedAt(media)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</small></button><div className="spacer"/><IconButton label={favorite(media)?'Remove favorite':'Add favorite'} disabled={busy} onClick={()=>onAction(media,'favorite')}><Star fill={favorite(media)?'currentColor':'none'}/></IconButton><IconButton label="Photo details" onClick={()=>setDetails(!details)}><Info/></IconButton></div>
-    <div className="viewer-canvas">{video?<div className="video-canvas">{usingDrivePreview?<iframe title={`Google Drive preview for ${media.name}`} src={drivePreviewUrl(media.id)} allow="autoplay; fullscreen" allowFullScreen/>:url?<video key={identity+url} src={url} controls playsInline autoPlay onCanPlay={()=>setError({key:'',text:''})} onError={e=>{const failure=classifyVideoError(e.currentTarget.error);if(failure.kind==='network'&&!url.startsWith('blob:'))void loadDownloadedVideo(failure.message);else if(failure.useDrivePreview||url.startsWith('blob:'))showDriveFallback(failure.message+' If the embedded preview asks, allow necessary cookies or use Open in Drive.');else setError({key:identity,text:failure.message});}}/>:<p role="status">Connecting video stream...</p>}{message&&<div className="preview-notice" role={usingDrivePreview?'status':'alert'}><AlertCircle size={16}/><span>{message}</span><button onClick={retry}>{usingDrivePreview?'Retry original stream':'Retry video'}</button><a href={`https://drive.google.com/file/d/${media.id}/view`} target="_blank" rel="noreferrer">Open in Drive <ExternalLink size={14}/></a></div>}</div>:<div className="image-canvas">
+    <div className="viewer-canvas">{video?<div className="video-canvas">{usingDrivePreview?<iframe title={`Google Drive preview for ${media.name}`} src={drivePreviewUrl(media.id)} allow="autoplay; fullscreen" allowFullScreen/>:url?<video key={identity+url} src={url} poster={media.thumbnailLink?screenPreviewUrl(media.thumbnailLink,1200):undefined} preload="metadata" controls playsInline autoPlay onCanPlay={()=>setError({key:'',text:''})} onError={e=>{const failure=classifyVideoError(e.currentTarget.error);if(failure.kind==='network'&&!url.startsWith('blob:'))void loadDownloadedVideo(failure.message);else if(failure.useDrivePreview||url.startsWith('blob:'))showDriveFallback(failure.message+' If the embedded preview asks, allow necessary cookies or use Open in Drive.');else setError({key:identity,text:failure.message});}}/>:<p role="status">Connecting video stream...</p>}{message&&<div className="preview-notice" role={usingDrivePreview?'status':'alert'}><AlertCircle size={16}/><span>{message}</span><button onClick={retry}>{usingDrivePreview?'Retry original stream':'Retry video'}</button><a href={`https://drive.google.com/file/d/${media.id}/view`} target="_blank" rel="noreferrer">Open in Drive <ExternalLink size={14}/></a></div>}</div>:<div className="image-canvas">
       <Thumbnail media={media} className="viewer-thumbnail-layer"/>
       {sharp.key===identity&&sharp.url&&<img className="viewer-original ready" src={sharp.url} alt={media.name} referrerPolicy="no-referrer"/>}
       {url&&<img key={url} className={`viewer-original ${decoded===url?'ready':''}`} src={url} alt={media.name} decoding="async" onLoad={()=>setDecoded(url)} onError={()=>setError({key:identity,text:'This browser could not display the original format. You can still download it or open it in Drive.'})}/>}
@@ -59,12 +82,12 @@ export function Viewer({media,index,items,close,onMove,onAction,busy,previews=ph
       <button className="viewer-hit previous" aria-label="Previous photo (left side)" disabled={index<=0} onClick={()=>onMove(items[index-1])}/>
       <button className="viewer-hit center" aria-label={immersive?'Show controls':'Hide controls'} onClick={()=>setImmersive(!immersive)}/>
       <button className="viewer-hit next" aria-label="Next photo (right side)" disabled={index<0||index>=items.length-1} onClick={()=>onMove(items[index+1])}/>
-      {message&&<div className="preview-notice" role="status"><AlertCircle size={16}/><span>{message}</span><button onClick={retry}>Retry original</button><a href={`https://drive.google.com/file/d/${media.id}/view`} target="_blank" rel="noreferrer">Open in Drive <ExternalLink size={14}/></a></div>}
+      {message&&<div className="preview-notice" role="status"><AlertCircle size={16}/><span>{message}</span><button onClick={retry}>Retry preview</button><a href={`https://drive.google.com/file/d/${media.id}/view`} target="_blank" rel="noreferrer">Open in Drive <ExternalLink size={14}/></a></div>}
     </div>}
     {index>0&&<button className="viewer-prev" aria-label="Previous photo" onClick={()=>onMove(items[index-1])}><ArrowLeft/></button>}{index<items.length-1&&<button className="viewer-next" aria-label="Next photo" onClick={()=>onMove(items[index+1])}><ArrowRight/></button>}</div>
-    <div className="viewer-actions"><a className="action" href={`https://drive.google.com/uc?export=download&id=${media.id}`} target="_blank" rel="noreferrer"><Download/>Download original</a><button onClick={()=>onAction(media,'date')} disabled={busy}><CalendarDays/>Edit date</button><a className="action" href={`https://drive.google.com/file/d/${media.id}/view`} target="_blank" rel="noreferrer"><ExternalLink/>Open in Drive</a><button onClick={()=>onAction(media,media.trashed?'restore':'trash')} disabled={busy}>{media.trashed?<RefreshCw/>:<Trash2/>}{media.trashed?'Restore':'Move to Bin'}</button><button onClick={()=>setImmersive(!immersive)}><Sun/>{immersive?'Show controls':'Black view'}</button></div>
+    <div className="viewer-actions">{!video&&<button onClick={()=>void loadOriginalPhoto()} disabled={originalLoading||original.key===identity}><ImageIcon/>{original.key===identity?'Original loaded':originalLoading?'Loading…':'Load original'}</button>}<a className="action" href={`https://drive.google.com/uc?export=download&id=${media.id}`} target="_blank" rel="noreferrer"><Download/>Download original</a><button onClick={()=>onAction(media,'date')} disabled={busy}><CalendarDays/>Edit date</button><a className="action" href={`https://drive.google.com/file/d/${media.id}/view`} target="_blank" rel="noreferrer"><ExternalLink/>Open in Drive</a><button onClick={()=>onAction(media,media.trashed?'restore':'trash')} disabled={busy}>{media.trashed?<RefreshCw/>:<Trash2/>}{media.trashed?'Restore':'Move to Bin'}</button><button onClick={()=>setImmersive(!immersive)}><Sun/>{immersive?'Show controls':'Black view'}</button></div>
     {immersive&&<button className="restore-controls" onClick={()=>setImmersive(false)}>Show controls</button>}
-    {details&&!immersive&&<aside className="detail-panel"><h3>Details</h3><dl><dt>Filename</dt><dd>{media.name}</dd><dt>Backup</dt><dd><CheckCircle2 size={16}/> Original backed up</dd><dt>Account</dt><dd>{media.email}</dd><dt>File size</dt><dd>{bytes(Number(media.size))}</dd><dt>Type</dt><dd>{media.mimeType}</dd><dt>Date source</dt><dd>{media.appProperties?.dateSource||'Cloud metadata'}</dd>{media.imageMediaMetadata?.width&&<><dt>Dimensions</dt><dd>{media.imageMediaMetadata.width} × {media.imageMediaMetadata.height}</dd></>}</dl><p className="muted">Videos first use an authenticated byte-range stream. If mobile/browser range streaming fails, the app downloads the authenticated original into a temporary in-memory blob and plays that without Drive cookies. Google Drive preview is used only when the browser cannot decode the original codec or the authenticated download also fails. Original files remain unchanged.</p></aside>}
+    {details&&!immersive&&<aside className="detail-panel"><h3>Details</h3><dl><dt>Filename</dt><dd>{media.name}</dd><dt>Backup</dt><dd><CheckCircle2 size={16}/> Original backed up</dd><dt>Account</dt><dd>{media.email}</dd><dt>File size</dt><dd>{bytes(Number(media.size))}</dd><dt>Type</dt><dd>{media.mimeType}</dd><dt>Date source</dt><dd>{media.appProperties?.dateSource||'Cloud metadata'}</dd>{media.imageMediaMetadata?.width&&<><dt>Dimensions</dt><dd>{media.imageMediaMetadata.width} × {media.imageMediaMetadata.height}</dd></>}</dl><p className="muted">Photos use an adaptive screen-sized preview first, so opening a photo no longer competes with a full camera-original download; use Load original only when you need every source pixel. Videos use authenticated bounded byte-range streaming, with temporary original download and Google Drive preview as fallbacks. Original files remain unchanged.</p></aside>}
   </Dialog>;
 }
 export default function App(){
