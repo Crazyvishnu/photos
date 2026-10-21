@@ -5,13 +5,14 @@ import { createContext, useContext, useCallback, useEffect, useMemo, useRef, use
 import { Image as ImageIcon, Cloud, CloudUpload, Images, Star, Video, Monitor, FileText, Trash2, Settings2, Search, Plus, X, Check, RefreshCw, HardDrive, ArrowLeft, ArrowRight, Download, Info, CalendarDays, CheckCircle2, Pause, Play, ExternalLink, Menu, LogOut, Sun, HelpCircle, AlertCircle, FolderPlus, MoreHorizontal, Link2 } from 'lucide-react';
 import { authorize, connected, disconnect, loadGoogle } from './auth';
 import { allConnected, changeMedia, refreshAccount, saveAlbum } from './drive';
-import { capturedAt, keyOf, favorite, bytes, ordered, defaultSettings, type Media, type Account, type Album, type Cache, type Settings } from './model';
+import { SCREEN_DERIVATIVE_KEY, capturedAt, keyOf, favorite, bytes, ordered, defaultSettings, type Media, type Account, type Album, type Cache, type Settings } from './model';
 import { load, save } from './store';
 import { uploadOriginal, type UploadProgress } from './upload';
 import { photoPreviews, type PreviewCache } from './preview-cache';
 import { PhotoGrid } from './PhotoGrid';
 import { Thumbnail } from './Thumbnail';
 import { thumbnails } from './thumbnail-cache';
+import { clearDerivativeAccount, derivativeBlob } from './derivative-cache';
 const ErrorContext=createContext('');
 type Page='photos'|'albums'|'favorites'|'videos'|'screenshots'|'documents'|'bin'|'storage'|'settings';
 type Task={id:string;file:File;status:'waiting'|'working'|'done'|'failed'|'paused';progress:UploadProgress;error?:string};
@@ -27,35 +28,45 @@ export function Viewer({media,index,items,close,onMove,onAction,busy,previews=ph
   const [immersive,setImmersive]=useState(false),[details,setDetails]=useState(false),[attempt,setAttempt]=useState(0);
   const [sharp,setSharp]=useState({key:'',url:''});
   useEffect(()=>{
-    if(video||!media.thumbnailLink)return;
-    let active=true;
+    if(video)return;
+    let active=true,objectUrl='';
+    const controller=new AbortController();
     const pixels=screenPreviewPixels(window.innerWidth,window.innerHeight,window.devicePixelRatio);
-    const candidates=screenPreviewCandidates(media.thumbnailLink,pixels);
-    const image=new Image();image.referrerPolicy='no-referrer';image.fetchPriority='low';
-    let cursor=0;
-    const tryNext=()=>{
-      if(!active)return;
-      if(cursor>=candidates.length){
-        // The base Thumbnail component is already visible. Do not turn an enhanced-preview miss into a user-facing error.
-        setError(current=>current.key===identity&&current.text.startsWith('Could not load the screen preview')?{key:'',text:''}:current);
-        return;
-      }
+    const image=new Image();image.referrerPolicy='no-referrer';image.fetchPriority='high';
+    let candidates:string[]=[],cursor=0;
+    const fallback=()=>{
+      if(!active||!media.thumbnailLink)return;
+      if(!candidates.length)candidates=screenPreviewCandidates(media.thumbnailLink,pixels);
+      if(cursor>=candidates.length)return;
       image.src=candidates[cursor++];
     };
     image.onload=()=>{
       if(!active)return;
       setSharp({key:identity,url:image.src});
-      setError(current=>current.key===identity&&current.text.startsWith('Could not load the screen preview')?{key:'',text:''}:current);
       const next=items[index+1]||items[index-1];
-      if(next?.thumbnailLink&&!next.mimeType.startsWith('video/')){
-        const warm=new Image();warm.referrerPolicy='no-referrer';
-        warm.src=screenPreviewCandidates(next.thumbnailLink,pixels)[0];
+      const nextDerivative=next?.appProperties?.[SCREEN_DERIVATIVE_KEY];
+      if(next&&nextDerivative&&!next.mimeType.startsWith('video/'))void derivativeBlob(next.email,nextDerivative,controller.signal).catch(()=>{});
+      else if(next?.thumbnailLink&&!next.mimeType.startsWith('video/')){
+        const warm=new Image();warm.referrerPolicy='no-referrer';warm.fetchPriority='low';warm.src=screenPreviewCandidates(next.thumbnailLink,pixels)[0];
       }
     };
-    image.onerror=tryNext;
-    const timer=setTimeout(tryNext,450);
-    return()=>{active=false;clearTimeout(timer);image.onload=null;image.onerror=null;image.src='';};
-  },[identity,media.thumbnailLink,video,index,items,attempt]);
+    image.onerror=()=>{
+      if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl='';}
+      fallback();
+    };
+    void (async()=>{
+      const derivativeId=media.appProperties?.[SCREEN_DERIVATIVE_KEY];
+      if(derivativeId){
+        try{
+          const blob=await derivativeBlob(media.email,derivativeId,controller.signal);
+          if(!active)return;
+          objectUrl=URL.createObjectURL(blob);image.src=objectUrl;return;
+        }catch(e){if(controller.signal.aborted)return;}
+      }
+      fallback();
+    })();
+    return()=>{active=false;controller.abort();image.onload=null;image.onerror=null;image.src='';if(objectUrl)URL.revokeObjectURL(objectUrl);};
+  },[identity,media.email,media.thumbnailLink,media.appProperties,video,index,items,attempt]);
   const [original,setOriginal]=useState({key:'',url:''}),[decoded,setDecoded]=useState(''),[error,setError]=useState({key:'',text:''});
   const [videoFallback,setVideoFallback]=useState({key:'',text:''});
   const url=original.key===identity?original.url:'';
@@ -127,7 +138,7 @@ export default function App(){
   useEffect(()=>{if(!settings.refresh)return;const run=()=>{if(document.visibilityState==='visible'&&navigator.onLine)void syncRef.current();};const id=setInterval(run,60000);window.addEventListener('focus',run);window.addEventListener('online',run);return()=>{clearInterval(id);window.removeEventListener('focus',run);window.removeEventListener('online',run);};},[settings.refresh]);
   useEffect(()=>{function key(e:KeyboardEvent){if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||document.querySelector('dialog[open]'))return;if(e.key==='/'){e.preventDefault();searchRef.current?.focus();}if(e.key==='Escape')setSelection(new Set());if(e.key==='?')setHelp(true);}window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[]);
   async function connect(email?:string){setBusy(true);setError('');try{const a=await authorize(settings.clientId,email);activeEmails.current.add(a.email);const next=[...accounts.filter(x=>x.email!==a.email),a];setAccounts(next);await save('accounts',next);notify(`${a.name} connected`);await sync(next);}catch(e){setError(errorText(e));}finally{setBusy(false);}}
-  function removeAccount(a:Account){setConfirm({title:'Remove account from this browser?',text:'Your files stay in Google Drive. The saved library for this account will be cleared here.',run:async()=>{disconnect(a.email);photoPreviews.clear(a.email);thumbnails.clear(a.email);activeEmails.current.delete(a.email);const next=accounts.filter(x=>x.email!==a.email);await save('accounts',next);await save(`cache:${a.email}`,undefined);setAccounts(next);setMedia(m=>m.filter(x=>x.email!==a.email));setAlbums(m=>m.filter(x=>x.email!==a.email));setSelection(new Set());setViewer(null);}});}
+  function removeAccount(a:Account){setConfirm({title:'Remove account from this browser?',text:'Your files stay in Google Drive. The saved library for this account will be cleared here.',run:async()=>{disconnect(a.email);photoPreviews.clear(a.email);thumbnails.clear(a.email);await clearDerivativeAccount(a.email);activeEmails.current.delete(a.email);const next=accounts.filter(x=>x.email!==a.email);await save('accounts',next);await save(`cache:${a.email}`,undefined);setAccounts(next);setMedia(m=>m.filter(x=>x.email!==a.email));setAlbums(m=>m.filter(x=>x.email!==a.email));setSelection(new Set());setViewer(null);}});}
   async function act(run:()=>Promise<void>){setBusy(true);setError('');try{await run();}catch(e){setError(errorText(e));}finally{setBusy(false);}}
   async function replaceMedia(next:Media|null,previous:Media){setMedia(items=>next?items.map(m=>keyOf(m)===keyOf(previous)?next:m):items.filter(m=>keyOf(m)!==keyOf(previous)));setViewer(v=>v&&keyOf(v)===keyOf(previous)?next:v);const c=await load<Cache>(`cache:${previous.email}`,{media:[],albums:[]});c.media=next?[...c.media.filter(m=>m.id!==next.id),next]:c.media.filter(m=>m.id!==previous.id);await save(`cache:${previous.email}`,c);}
   async function mutate(items:Media[],operation:'favorite'|'date'|'trash'|'restore'|'delete',date?:number){for(const m of items){await replaceMedia(await changeMedia(m,operation,date),m);if(operation==='delete'){photoPreviews.clear(m.email,m.id);thumbnails.clear(m.email,m.id);}}setSelection(new Set());notify(operation==='trash'?'Moved to Bin':operation==='restore'?'Restored to your library':'Changes saved');}
