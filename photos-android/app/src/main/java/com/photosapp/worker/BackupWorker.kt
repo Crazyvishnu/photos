@@ -24,6 +24,7 @@ import com.photosapp.data.SourceChangedException
 import com.photosapp.data.DriveResumableUploader
 import com.photosapp.data.DriveUploadFailure
 import com.photosapp.data.UploadConnectionException
+import com.photosapp.data.ImageDerivativeUploader
 import java.util.concurrent.TimeUnit
 
 
@@ -95,7 +96,10 @@ class BackupWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                     workDataOf(KEY_ERROR to applicationContext.getString(R.string.backup_error_permission)))
             }
             media.keys.filter { db.libraryStateDao().isHidden(it) }.forEach { media.remove(it) }
-            if (media.isEmpty()) return@withContext Result.success()
+            if (media.isEmpty()) {
+                backfillDerivatives(if (inputData.getBoolean(KEY_SELECTED_ONLY, false)) 8 else 24)
+                return@withContext Result.success()
+            }
             // Record the queue before processing so every discovered item has an honest waiting state.
             db.syncDao().insertAll(media.keys.mapNotNull { uri ->
                 val current = db.syncDao().getStatus(uri)
@@ -185,6 +189,7 @@ class BackupWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                     }
                     if (fileId.isNullOrBlank()) throw NoBackupSpaceException()
                     recordBackup(item, requireNotNull(ownerEmail), fileId)
+                    maybeCreateDerivatives(item, requireNotNull(ownerEmail), fileId)
                     completed++
                 } catch (e: CancellationException) {
                     throw e
@@ -205,6 +210,7 @@ class BackupWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                 notices.update()
             }
             publish(PHASE_FINISHING)
+            backfillDerivatives(if (inputData.getBoolean(KEY_SELECTED_ONLY, false)) 8 else 24)
             CloudLibraryRepository().refresh()
             notices.finish(failed)
             if (failed) Result.retry() else Result.success()
@@ -260,7 +266,37 @@ class BackupWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             db.libraryStateDao().putTrash(bin.copy(localUris = org.json.JSONArray(local).toString()), local + key)
         }
         recordBackup(item, match.accountEmail, match.fileId)
+        maybeCreateDerivatives(item, match.accountEmail, match.fileId)
         return true
+    }
+
+    private suspend fun maybeCreateDerivatives(item: LocalMedia, email: String, id: String) {
+        if (!item.mime.startsWith("image/")) return
+        try {
+            ImageDerivativeUploader.ensure(applicationContext, email, id, item.uri, item.name)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // The original backup is already durable. Preview optimization is best-effort and retries later.
+            android.util.Log.w("BackupWorker", "Derivative generation deferred for ${item.name}", e)
+        }
+    }
+
+    private suspend fun backfillDerivatives(limit: Int) {
+        var processed = 0
+        for (status in db.syncDao().getByState(SyncState.SUCCESS)) {
+            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+            if (processed >= limit) break
+            val email = status.accountEmail ?: continue
+            val id = status.driveFileId ?: continue
+            if (db.accountDao().getAccount(email) == null || ImageDerivativeUploader.locallyComplete(applicationContext, email, id)) continue
+            val uri = Uri.parse(status.localUri)
+            if (uri.scheme != "content") continue
+            val item = try { readMedia(uri) } catch (_: SecurityException) { null } ?: continue
+            if (!item.mime.startsWith("image/")) continue
+            processed++
+            maybeCreateDerivatives(item, email, id)
+        }
     }
 
     private fun mediaFingerprint(uri: Uri): String = runCatching {
