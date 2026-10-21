@@ -297,7 +297,7 @@ photos/
 
 Main libraries include Room 2.6.1, WorkManager 2.9.1, DataStore 1.1.1, Retrofit 2.11.0, OkHttp 4.12.0, Coil 2.7.0 and Media3 ExoPlayer 1.8.0. These are the checked-in versions, not claims that they are the newest releases.
 
-`BuildConfig.BASE_URL` and a LAN cleartext network configuration remain from earlier development. The active Drive client uses `https://www.googleapis.com/` directly; no LAN server is required. Review unused development configuration before production distribution.
+The active Drive client uses `https://www.googleapis.com/` directly and the production Android manifest rejects cleartext HTTP traffic. No LAN backend or development base URL is required.
 
 ## Permissions and privacy
 
