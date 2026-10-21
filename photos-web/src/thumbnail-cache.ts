@@ -1,6 +1,7 @@
 import { connected } from './auth';
 import { json } from './drive';
-import { keyOf, type Media } from './model';
+import { GRID_DERIVATIVE_KEY, keyOf, type Media } from './model';
+import { derivativeBlob } from './derivative-cache';
 
 type Entry={media:Media;priority:number;users:number;started:boolean;controller:AbortController;promise:Promise<HTMLImageElement>;resolve:(image:HTMLImageElement)=>void;reject:(error:unknown)=>void;image?:HTMLImageElement};
 export class ThumbnailCache {
@@ -45,6 +46,10 @@ export class ThumbnailCache {
   }
 }
 
+function readBlobImage(blob:Blob,signal:AbortSignal,priority:number):Promise<HTMLImageElement>{
+  const url=URL.createObjectURL(blob);
+  return readImage(url,signal,priority).finally(()=>URL.revokeObjectURL(url));
+}
 function readImage(url:string,signal:AbortSignal,priority:number):Promise<HTMLImageElement>{
   return new Promise((resolve,reject)=>{
     if(signal.aborted){reject(new DOMException('Aborted','AbortError'));return;}
@@ -58,6 +63,8 @@ function readImage(url:string,signal:AbortSignal,priority:number):Promise<HTMLIm
   });
 }
 export async function loadThumbnail(m:Media,signal:AbortSignal,priority:number){
+  const derivativeId=m.appProperties?.[GRID_DERIVATIVE_KEY];
+  if(derivativeId&&connected(m.email)){try{return await readBlobImage(await derivativeBlob(m.email,derivativeId,signal),signal,priority);}catch(e){if(signal.aborted)throw e;}}
   if(m.thumbnailLink){try{return await readImage(m.thumbnailLink,signal,priority);}catch(e){if(signal.aborted)throw e;}}
   if(!connected(m.email))throw new Error('Reconnect this account to refresh its preview.');
   // Drive thumbnail links expire without a media change. Refresh only this visible file.
