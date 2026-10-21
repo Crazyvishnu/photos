@@ -148,10 +148,10 @@ export default function App(){
   }),settings.sort),[media,page,query,kind,accountFilter,month,albumId,activeAlbum,settings.sort]);
   useEffect(()=>{
     if(page!=='photos')return;
-    const candidates=filtered.filter(m=>!!m.thumbnailLink);
-    if(month)thumbnails.warm(candidates,600);
-    else if(!query&&!albumId)thumbnails.warm(candidates,120);
-  },[filtered,page,month,query,albumId]);
+    // Warm up to 600 timeline items in the background (typically at least a month).
+    // Mounted/visible thumbnails always have higher priority than this queue.
+    thumbnails.warm(filtered.filter(m=>!!m.thumbnailLink),600);
+  },[filtered,page]);
   const selected=media.filter(m=>selection.has(keyOf(m)));const used=accounts.reduce((n,a)=>n+a.usage,0);const limit=accounts.every(a=>a.limit!==null)?accounts.reduce((n,a)=>n+(a.limit||0),0):null;
   function navigate(p:Page){setPage(p);setAlbumId(null);setSelection(new Set());setMobileMenu(false);setQuery('');setKind('all');setMonth('');setAccountFilter('all');}
   async function writeAlbum(a:Album){const updated=await saveAlbum(a);setAlbums(prev=>[...prev.filter(x=>x.id!==a.id),updated]);const c=await load<Cache>(`cache:${a.email}`,{media:[],albums:[]});c.albums=[...c.albums.filter(x=>x.id!==a.id),updated];await save(`cache:${a.email}`,c);return updated;}
