@@ -1,6 +1,7 @@
 export const MEDIA_MARKER = 'photosapp.library.v1';
 export const ALBUM_MARKER = 'photosapp.albums.v1';
 export const DERIVATIVE_MARKER = 'photosapp.derivative.v1';
+export const DERIVATIVE_FOLDER_MARKER = 'photosapp.derivative.folder.v1';
 export const DERIVATIVE_VERSION = '1';
 export const GRID_DERIVATIVE_KEY = 'gridDerivativeId';
 export const SCREEN_DERIVATIVE_KEY = 'screenDerivativeId';
