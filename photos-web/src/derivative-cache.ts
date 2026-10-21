@@ -27,6 +27,10 @@ async function trim(){
   const doomed=all.sort((a,b)=>a.lastAccess-b.lastAccess).filter(e=>{if(bytes<=MAX_BYTES&&count<=MAX_ENTRIES)return false;bytes-=e.bytes;count--;return true;});
   await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');const store=tx.objectStore(STORE);for(const e of doomed)store.delete([e.email,e.id]);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});
 }
+export async function removeCachedDerivative(email:string,id:string){
+  if(!dbPromise)return;const db=await dbPromise;
+  await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete([email,id]);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});
+}
 export async function clearDerivativeAccount(email:string){
   if(!dbPromise)return;const db=await dbPromise;
   const all=await new Promise<CachedDerivative[]>((resolve,reject)=>{const req=db.transaction(STORE).objectStore(STORE).getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);});
