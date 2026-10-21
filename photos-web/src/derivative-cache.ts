@@ -1,3 +1,4 @@
+import { checked, request } from './drive';
 type CachedDerivative={email:string;id:string;blob:Blob;bytes:number;lastAccess:number};
 const DB_NAME='photos-derivatives-v1',STORE='derivatives',MAX_BYTES=256*1024*1024,MAX_ENTRIES=1200;
 const dbPromise=typeof indexedDB==='undefined'?null:new Promise<IDBDatabase>((resolve,reject)=>{
@@ -30,4 +31,13 @@ export async function clearDerivativeAccount(email:string){
   if(!dbPromise)return;const db=await dbPromise;
   const all=await new Promise<CachedDerivative[]>((resolve,reject)=>{const req=db.transaction(STORE).objectStore(STORE).getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);});
   await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');const store=tx.objectStore(STORE);for(const e of all)if(e.email===email)store.delete([e.email,e.id]);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});
+}
+
+export async function derivativeBlob(email:string,id:string,signal:AbortSignal):Promise<Blob>{
+  const cached=await cachedDerivative(email,id);if(cached)return cached;
+  const response=await checked(await request(email,`drive/v3/files/${encodeURIComponent(id)}?alt=media`,{},signal));
+  const blob=await response.blob();
+  if(!blob.type.startsWith('image/'))throw new Error('Optimized preview is not an image.');
+  void storeDerivative(email,id,blob).catch(()=>{});
+  return blob;
 }
