@@ -35,13 +35,7 @@ class ShareImportActivity : AppCompatActivity() {
             view.setPadding(pad + bars.left, pad + bars.top, pad + bars.right, pad + bars.bottom)
             WindowInsetsCompat.CONSUMED
         }
-        val incoming = mutableListOf<Uri>()
-        if (intent.action == Intent.ACTION_SEND || intent.action == Intent.ACTION_SEND_MULTIPLE) {
-            if (intent.action == Intent.ACTION_SEND) IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)?.let { incoming += it }
-            else incoming += IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java).orEmpty()
-            intent.clipData?.let { clip -> for (i in 0 until clip.itemCount) clip.getItemAt(i).uri?.let { incoming += it } }
-        }
-        vm.receive(incoming.filter { it.scheme == "content" }.distinct())
+        if (!vm.state.value.started) acceptShare(intent)
         binding.shareOpen.setOnClickListener {
             startActivity(Intent(this, com.photosapp.ui.MainActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP) })
             finish()
@@ -62,4 +56,19 @@ class ShareImportActivity : AppCompatActivity() {
             }
         } }
     }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        acceptShare(intent)
+    }
+    private fun acceptShare(intent: Intent) {
+        val incoming = mutableListOf<Uri>()
+        if (intent.action == Intent.ACTION_SEND || intent.action == Intent.ACTION_SEND_MULTIPLE) {
+            if (intent.action == Intent.ACTION_SEND) IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)?.let { incoming += it }
+            else incoming += IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java).orEmpty()
+            intent.clipData?.let { clip -> for (i in 0 until clip.itemCount) clip.getItemAt(i).uri?.let { incoming += it } }
+        }
+        vm.receive(incoming.filter { it.scheme == "content" }.distinct())
+    }
+
 }

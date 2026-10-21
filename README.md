@@ -6,7 +6,7 @@ The interface is inspired by Google Photos. This is an independent app; its back
 
 | Project | Current configuration |
 | --- | --- |
-| App version | Android 2.0.0 (code 11), Web 2.0.0 |
+| App version | Android 2.0.1 (code 12), Web 2.0.0 |
 | Android package | `com.photosapp` |
 | Minimum Android version | Android 8.0 / API 26 |
 | Compile / target SDK | API 35 |
@@ -353,4 +353,6 @@ Room migration 8 -> 9 retains existing records and adds a durable album synchron
 
 Android refreshes cloud media while its home screen is active every minute; the web app refreshes while visible when enabled in settings. Both also support manual refresh. Pending album writes use one unique worker rather than queuing a worker per media file. The phone build preserves its signing certificate for updating existing installations.
 
-Web validation: 26 automated checks passed for hashing, ranges, metadata, cursor failure handling, deletion guards, preview caching, visible-thumbnail scheduling, expired-link recovery, stalled-transfer timeouts and all 4,450 timeline items; TypeScript and Vite production build passed. The welcome/settings/album error states and theme persistence were inspected in the browser. A deliberately delayed original verified immediate thumbnail display and left/right photo navigation with controls hidden. These checks use mocked API data; live OAuth, transfer CORS and phone/web round trips still require explicit account authorization and hardware verification.
+Web validation: 28 automated checks passed for hashing, ranges, metadata, cursor failure handling, deletion guards, preview caching, visible-thumbnail scheduling, expired-link recovery, stalled-transfer timeouts and all 4,450 timeline items; TypeScript and Vite production build passed. The welcome/settings/album error states and theme persistence were inspected in the browser. A deliberately delayed original verified immediate thumbnail display and left/right photo navigation with controls hidden. These checks use mocked API data; live OAuth, transfer CORS and phone/web round trips still require explicit account authorization and hardware verification.
+
+Android 2.0.1 accepts successive share intents and serializes incoming batches while existing uploads continue. Copied originals and pending backup status remain in the local database; follow-up workers process subsequent batches. Web authorization survives refresh in the same tab until the Google access token expires. Closing the tab or revoking access can require reconnection.

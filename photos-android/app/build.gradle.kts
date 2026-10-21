@@ -13,8 +13,8 @@ android {
         applicationId = "com.photosapp"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "2.0.0"
+        versionCode = 12
+        versionName = "2.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "BASE_URL", "\"http://192.168.137.1:3000\"")
     }

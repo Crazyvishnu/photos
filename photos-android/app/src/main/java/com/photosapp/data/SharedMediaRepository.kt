@@ -82,6 +82,7 @@ class SharedMediaRepository(private val context: Context) {
     fun queue(item: SharedMedia) {
         val dao = ServiceLocator.db.syncDao()
         val old = dao.getStatus(item.uri)
+        if (old?.status == SyncState.UPLOADING) return
         val connected = old?.accountEmail?.let { ServiceLocator.db.accountDao().getAccount(it) != null } == true
         if (old?.status != SyncState.SUCCESS || !connected) {
             dao.insert((old ?: SyncStatus(item.uri)).copy(status = SyncState.PENDING, errorMessage = null))

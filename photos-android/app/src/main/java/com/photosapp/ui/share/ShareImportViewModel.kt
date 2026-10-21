@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.update
+import java.util.concurrent.atomic.AtomicInteger
 
 data class ShareImportState(val started: Boolean = false, val total: Int = 0, val received: Int = 0, val failed: Int = 0,
     val complete: Boolean = false, val needsAccount: Boolean = false, val queueFailed: Boolean = false)
@@ -20,10 +23,17 @@ data class ShareImportState(val started: Boolean = false, val total: Int = 0, va
 class ShareImportViewModel : ViewModel() {
     private val mutable = MutableStateFlow(ShareImportState())
     val state = mutable.asStateFlow()
+    private val batches = Channel<List<Uri>>(Channel.UNLIMITED)
+    private val pending = AtomicInteger()
     fun receive(uris: List<Uri>) {
-        if (mutable.value.started) return
-        mutable.value = ShareImportState(started = true, total = uris.size)
+        if (uris.isEmpty()) return
+        pending.incrementAndGet()
+        mutable.update { it.copy(started = true, complete = false, total = it.total + uris.size) }
+        batches.trySend(uris)
+    }
+    init {
         viewModelScope.launch(Dispatchers.IO) {
+          for (uris in batches) {
             try {
                 val context = ServiceLocator.context
                 val repository = SharedMediaRepository(context)
@@ -37,8 +47,8 @@ class ShareImportViewModel : ViewModel() {
                         received++
 
             } catch (error: CancellationException) { throw error }
-                catch (_: Exception) { failed++ }
-                mutable.value = mutable.value.copy(received = received, failed = failed)
+                catch (_: Exception) { failed++; mutable.update { it.copy(failed = it.failed + 1) }; continue }
+                mutable.update { it.copy(received = it.received + 1) }
             }
             val needsAccount = ServiceLocator.db.accountDao().getAllAccounts().isEmpty()
             if (received > 0) {
@@ -53,11 +63,15 @@ class ShareImportViewModel : ViewModel() {
                         .setInputData(workDataOf(BackupWorker.KEY_SELECTED_ONLY to true))
                         .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()).build())
             }
-            mutable.value = mutable.value.copy(complete = true, needsAccount = needsAccount)
+            mutable.update { it.copy(needsAccount = needsAccount) }
             } catch (error: CancellationException) { throw error }
             catch (_: Exception) {
-                mutable.value = mutable.value.copy(complete = true, failed = mutable.value.total - mutable.value.received, queueFailed = true)
+                mutable.update { it.copy(queueFailed = true) }
+            } finally {
+                pending.decrementAndGet()
+                mutable.update { it.copy(complete = pending.get() == 0) }
             }
+          }
         }
     }
 }

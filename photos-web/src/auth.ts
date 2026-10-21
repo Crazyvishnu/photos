@@ -1,10 +1,15 @@
 import type { Account } from './model';
-const tokens=new Map<string,{value:string;until:number}>();
+type SessionToken={value:string;until:number};
+const sessionKey='photos-access-session-v1';
+const tokens=new Map<string,SessionToken>();
+try{const saved=JSON.parse(sessionStorage.getItem(sessionKey)||'[]');if(Array.isArray(saved))for(const [email,t] of saved){if(typeof email==='string'&&typeof t?.value==='string'&&Number.isFinite(t.until)&&t.until>Date.now()+30000)tokens.set(email,t);}}catch{/* Storage can be disabled. Keep authorization memory-only in that case. */}
+function persistTokens(){try{sessionStorage.setItem(sessionKey,JSON.stringify([...tokens].filter(([,t])=>t.until>Date.now()+30000)));}catch{}}
+
 type TokenResponse={access_token:string;expires_in:number;error?:string};
 type GoogleLibrary={ accounts:{oauth2:{initTokenClient:(v:{client_id:string;scope:string;hint?:string;callback:(r:TokenResponse)=>void;error_callback:(e:{type:string})=>void})=>{requestAccessToken:(v:{prompt:string})=>void};hasGrantedAllScopes:(r:TokenResponse,...scopes:string[])=>boolean}} };
 declare global { interface Window { google?:GoogleLibrary } }
 export function connected(email:string) { const t=tokens.get(email);return !!t && t.until>Date.now()+30000; }
-export function disconnect(email:string) { tokens.delete(email); }
+export function disconnect(email:string) { tokens.delete(email);persistTokens(); }
 export function token(email:string) { const t=tokens.get(email); if(!t || !connected(email)) throw new Error(`Reconnect ${email} to continue. Your access has expired.`); return t.value; }
 let googleLoading:Promise<void>|undefined;
 export function loadGoogle():Promise<void> {
@@ -33,7 +38,7 @@ export function authorize(clientId:string, hint?:string):Promise<Account> {
         const res=await fetch('https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress,photoLink),storageQuota',{headers:{Authorization:`Bearer ${r.access_token}`}});
         if(!res.ok) throw new Error('Could not read the Google account. Enable Drive API for the OAuth project.');
         const data=await res.json();const email=data.user?.emailAddress;if(!email) throw new Error('Google did not return an account email.');
-        tokens.set(email,{value:r.access_token,until:Date.now()+Number(r.expires_in)*1000});
+        tokens.set(email,{value:r.access_token,until:Date.now()+Number(r.expires_in)*1000});persistTokens();
         resolve({email,name:data.user.displayName||email,picture:data.user.photoLink,limit:data.storageQuota.limit ? Number(data.storageQuota.limit):null,usage:Number(data.storageQuota.usage)||0});
       }catch(e){reject(e);}}
     }); client.requestAccessToken({prompt:hint ? '' : 'select_account'});
