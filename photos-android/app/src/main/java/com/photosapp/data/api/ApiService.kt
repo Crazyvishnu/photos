@@ -90,6 +90,9 @@ interface ApiService {
         @Query("pageSize") pageSize: Int = 1000
     ): DriveFileList
 
+    @POST("upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,size,appProperties,trashed")
+    suspend fun uploadDerivative(@Body body: RequestBody): DriveFile
+
     @POST("upload/drive/v3/files?uploadType=resumable&fields=id,name,size,appProperties,trashed")
     suspend fun startUpload(
         @Body metadata: RequestBody,
@@ -103,6 +106,9 @@ interface ApiService {
         @Header("Content-Range") range: String,
         @Body bytes: RequestBody
     ): retrofit2.Response<okhttp3.ResponseBody>
+
+    @POST("drive/v3/files?fields=id,name,mimeType,appProperties")
+    suspend fun createMetadataFile(@Body body: RequestBody): DriveFile
 
     // Create a folder
     @Multipart
