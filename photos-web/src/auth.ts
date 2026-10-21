@@ -6,9 +6,21 @@ declare global { interface Window { google?:GoogleLibrary } }
 export function connected(email:string) { const t=tokens.get(email);return !!t && t.until>Date.now()+30000; }
 export function disconnect(email:string) { tokens.delete(email); }
 export function token(email:string) { const t=tokens.get(email); if(!t || !connected(email)) throw new Error(`Reconnect ${email} to continue. Your access has expired.`); return t.value; }
+let googleLoading:Promise<void>|undefined;
 export function loadGoogle():Promise<void> {
-  if(window.google) return Promise.resolve();
-  return new Promise((resolve,reject)=>{ let script=document.querySelector<HTMLScriptElement>('#google-identity'); if(!script){script=document.createElement('script');script.id='google-identity';script.src='https://accounts.google.com/gsi/client';script.async=true;document.head.append(script);}script.addEventListener('load',()=>resolve(),{once:true});script.addEventListener('error',()=>reject(new Error('Google sign-in could not load. Check your connection.')),{once:true}); });
+  if(window.google?.accounts?.oauth2) return Promise.resolve();
+  if(googleLoading) return googleLoading;
+  googleLoading=new Promise<void>((resolve,reject)=>{
+    document.querySelector('#google-identity')?.remove();
+    const script=document.createElement('script');
+    script.id='google-identity';script.src='https://accounts.google.com/gsi/client';script.async=true;
+    const finish=(success:boolean)=>{clearTimeout(timer);script.onload=null;script.onerror=null;if(success)resolve();else{script.remove();reject(new Error('Google sign-in could not load. Check your connection and retry.'));}};
+    const timer=setTimeout(()=>finish(false),20000);
+    script.onload=()=>finish(!!window.google?.accounts?.oauth2);
+    script.onerror=()=>finish(false);
+    document.head.append(script);
+  }).finally(()=>{googleLoading=undefined;});
+  return googleLoading;
 }
 export function authorize(clientId:string, hint?:string):Promise<Account> {
   if(!window.google) return Promise.reject(new Error('Google sign-in is still loading. Try again shortly.'));
