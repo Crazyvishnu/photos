@@ -1,3 +1,4 @@
+import { videoStream } from './video-stream';
 import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Image as ImageIcon, Cloud, CloudUpload, Images, Star, Video, Monitor, FileText, Trash2, Settings2, Search, Plus, X, Check, RefreshCw, HardDrive, ArrowLeft, ArrowRight, Download, Info, CalendarDays, CheckCircle2, Pause, Play, ExternalLink, Menu, LogOut, Sun, HelpCircle, AlertCircle, FolderPlus, MoreHorizontal, Link2 } from 'lucide-react';
 import { authorize, connected, disconnect, loadGoogle } from './auth';
@@ -30,14 +31,14 @@ export function Viewer({media,index,items,close,onMove,onAction,busy,previews=ph
   useEffect(()=>{
     let active=true;const neighbors=items.slice(Math.max(0,index-1),index+2).filter(m=>keyOf(m)!==identity);
     previews.focus(media,neighbors);
-    void previews.get(media).then(p=>{if(active){setError({key:'',text:''});setOriginal({key:identity,url:p.url});for(const n of neighbors)previews.prefetch(n);}}).catch(e=>{if(active)setError({key:identity,text:errorText(e)});});
+    void (video?videoStream(media).then(url=>({url,bytes:0})):previews.get(media)).then(p=>{if(active){setError({key:'',text:''});setOriginal({key:identity,url:p.url});for(const n of neighbors)previews.prefetch(n);}}).catch(e=>{if(active)setError({key:identity,text:errorText(e)});});
 
     return()=>{active=false;previews.release();};
   },[identity,video,index,items,attempt,previews]);
   useEffect(()=>{function key(e:KeyboardEvent){if(e.target instanceof HTMLInputElement)return;if(e.key==='ArrowLeft'&&index>0){e.preventDefault();onMove(items[index-1]);}if(e.key==='ArrowRight'&&index<items.length-1){e.preventDefault();onMove(items[index+1]);}}window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[index,items,onMove]);
   const retry=()=>{previews.clear(media.email,media.id);setOriginal({key:'',url:''});setDecoded('');setError({key:'',text:''});setAttempt(n=>n+1);};
   return <Dialog title={media.name} className={`viewer ${immersive?'immersive':''}`} close={close}><div className="viewer-toolbar"><IconButton label="Back to library" onClick={close}><ArrowLeft/></IconButton><button className="date-button" onClick={()=>onAction(media,'date')} disabled={busy}><strong>{new Date(capturedAt(media)).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'})}</strong><small>{new Date(capturedAt(media)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</small></button><div className="spacer"/><IconButton label={favorite(media)?'Remove favorite':'Add favorite'} disabled={busy} onClick={()=>onAction(media,'favorite')}><Star fill={favorite(media)?'currentColor':'none'}/></IconButton><IconButton label="Photo details" onClick={()=>setDetails(!details)}><Info/></IconButton></div>
-    <div className="viewer-canvas">{video?<div className="video-canvas">{url?<video key={identity+url} src={url} controls playsInline autoPlay onError={()=>setError({key:identity,text:"This video format is not supported by your browser. Open it in Drive or download the original."})}/>:<p role="status">Loading video securely...</p>}{message&&<div className="preview-notice" role="alert">{message}<button onClick={retry}>Retry video</button></div>}</div>:<div className="image-canvas">
+    <div className="viewer-canvas">{video?<div className="video-canvas">{url?<video key={identity+url} src={url} controls playsInline autoPlay onError={()=>setError({key:identity,text:"This video format is not supported by your browser. Open it in Drive or download the original."})}/>:<p role="status">Connecting video stream...</p>}{message&&<div className="preview-notice" role="alert">{message}<button onClick={retry}>Retry video</button></div>}</div>:<div className="image-canvas">
       <Thumbnail media={media} className="viewer-thumbnail-layer"/>
       {sharp.key===identity&&sharp.url&&<img className="viewer-original ready" src={sharp.url} alt={media.name} referrerPolicy="no-referrer"/>}
       {url&&<img key={url} className={`viewer-original ${decoded===url?'ready':''}`} src={url} alt={media.name} decoding="async" onLoad={()=>setDecoded(url)} onError={()=>setError({key:identity,text:'This browser could not display the original format. You can still download it or open it in Drive.'})}/>}
