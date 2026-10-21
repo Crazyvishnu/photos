@@ -31,7 +31,7 @@ self.addEventListener('fetch',event=>{
   for(const name of ['Content-Type','Content-Length','Content-Range','Accept-Ranges','ETag','Last-Modified']){
    const value=upstream.headers.get(name);if(value)output.set(name,value);
   }
-  output.set('Cache-Control','private, no-store');
+  output.set('Cache-Control','no-store');
   return new Response(event.request.method==='HEAD'?null:upstream.body,{status:upstream.status,statusText:upstream.statusText,headers:output});
  })().catch(()=>new Response('Video connection interrupted',{status:502,headers:{'Cache-Control':'no-store'}})));
 });
