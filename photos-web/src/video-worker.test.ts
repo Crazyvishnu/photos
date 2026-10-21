@@ -38,3 +38,14 @@ it('repairs a hidden Drive Content-Range header using the known media size',asyn
  expect(response.headers.get('Accept-Ranges')).toBe('bytes');
  expect(response.headers.get('Content-Length')).toBe('2');
 });
+
+it('caps open-ended browser requests to four megabyte chunks so metadata and seeks do not wait on the whole video',async()=>{
+ const total=20*1024*1024;
+ const h=harness({'Content-Type':'video/mp4'});
+ let result!:Promise<Response>;
+ h.handlers.fetch({clientId:'tab',request:new Request(`https://example.test/photos/private-video?id=one&email=a&size=${total}`,{headers:{Range:'bytes=0-'}}),respondWith:(r:Promise<Response>)=>result=r});
+ const response=await result;
+ expect(h.forwarded().init.headers.Range).toBe('bytes=0-4194303');
+ expect(response.headers.get('Content-Range')).toBe(`bytes 0-4194303/${total}`);
+ expect(response.headers.get('Content-Length')).toBe('4194304');
+});
