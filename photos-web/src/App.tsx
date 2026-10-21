@@ -1,5 +1,5 @@
 import { videoStream } from './video-stream';
-import { screenPreviewPixels, screenPreviewUrl } from './screen-preview';
+import { screenPreviewCandidates, screenPreviewPixels, screenPreviewUrl } from './screen-preview';
 import { classifyVideoError, drivePreviewUrl, fallbackForStreamError } from './video-playback';
 import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Image as ImageIcon, Cloud, CloudUpload, Images, Star, Video, Monitor, FileText, Trash2, Settings2, Search, Plus, X, Check, RefreshCw, HardDrive, ArrowLeft, ArrowRight, Download, Info, CalendarDays, CheckCircle2, Pause, Play, ExternalLink, Menu, LogOut, Sun, HelpCircle, AlertCircle, FolderPlus, MoreHorizontal, Link2 } from 'lucide-react';
@@ -30,15 +30,30 @@ export function Viewer({media,index,items,close,onMove,onAction,busy,previews=ph
     if(video||!media.thumbnailLink)return;
     let active=true;
     const pixels=screenPreviewPixels(window.innerWidth,window.innerHeight,window.devicePixelRatio);
+    const candidates=screenPreviewCandidates(media.thumbnailLink,pixels);
     const image=new Image();image.referrerPolicy='no-referrer';image.fetchPriority='high';
-    image.onload=()=>{if(!active)return;setSharp({key:identity,url:image.src});
+    let cursor=0;
+    const tryNext=()=>{
+      if(!active)return;
+      if(cursor>=candidates.length){
+        // The base Thumbnail component is already visible. Do not turn an enhanced-preview miss into a user-facing error.
+        setError(current=>current.key===identity&&current.text.startsWith('Could not load the screen preview')?{key:'',text:''}:current);
+        return;
+      }
+      image.src=candidates[cursor++];
+    };
+    image.onload=()=>{
+      if(!active)return;
+      setSharp({key:identity,url:image.src});
+      setError(current=>current.key===identity&&current.text.startsWith('Could not load the screen preview')?{key:'',text:''}:current);
       const next=items[index+1]||items[index-1];
       if(next?.thumbnailLink&&!next.mimeType.startsWith('video/')){
-        const warm=new Image();warm.referrerPolicy='no-referrer';warm.src=screenPreviewUrl(next.thumbnailLink,pixels);
+        const warm=new Image();warm.referrerPolicy='no-referrer';
+        warm.src=screenPreviewCandidates(next.thumbnailLink,pixels)[0];
       }
     };
-    image.onerror=()=>{if(active)setError({key:identity,text:'Could not load the screen preview. Retry or load the original.'});};
-    image.src=screenPreviewUrl(media.thumbnailLink,pixels);
+    image.onerror=tryNext;
+    tryNext();
     return()=>{active=false;image.onload=null;image.onerror=null;image.src='';};
   },[identity,media.thumbnailLink,video,index,items,attempt]);
   const [original,setOriginal]=useState({key:'',url:''}),[decoded,setDecoded]=useState(''),[error,setError]=useState({key:'',text:''}),[originalLoading,setOriginalLoading]=useState(false);
