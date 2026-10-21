@@ -62,8 +62,8 @@ export async function saveAlbum(album:Album):Promise<Album>{
   await json(album.email,path,{method:album.fileId?'PATCH':'POST',headers:{'Content-Type':`multipart/related; boundary=${boundary}`},body});return {...updated,fileId:id};
 }
 export async function downloadImage(m:Media,signal:AbortSignal):Promise<{url:string;bytes:number}>{
-  if(Number(m.size)>100*1024*1024)throw new Error('This image is too large for an in-browser preview. Open it in Drive.');
-  const deadline=AbortSignal.timeout(30000);
+  if(Number(m.size)>(m.mimeType.startsWith('video/')?512:100)*1024*1024)throw new Error('This original is too large for an in-browser preview. Open it in Drive.');
+  const deadline=AbortSignal.timeout(m.mimeType.startsWith("video/")?600000:30000);
   try{
     const response=await checked(await request(m.email,`drive/v3/files/${encodeURIComponent(m.id)}?alt=media`,{},AbortSignal.any([signal,deadline])));
     const blob=await response.blob();return {url:URL.createObjectURL(blob),bytes:blob.size};
