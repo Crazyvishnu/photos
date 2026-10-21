@@ -83,7 +83,7 @@ export function videoStream(m: Media): Promise<string> {
 
   return ready.then(async () => {
     token(m.email);
-    const url = import.meta.env.BASE_URL + 'private-video?' + new URLSearchParams({ id: m.id, email: m.email });
+    const url = import.meta.env.BASE_URL + 'private-video?' + new URLSearchParams({ id: m.id, email: m.email, size: String(Number(m.size) || 0) });
     await probePrivateStream(url);
     return url;
   });
