@@ -23,8 +23,8 @@ export async function makeImageDerivatives(file:Blob):Promise<Derivative[]>{
     return [{kind:'grid',blob:grid},{kind:'screen',blob:screen}];
   }finally{bitmap.close();}
 }
-async function findExisting(email:string,originalId:string,kind:Kind,signal:AbortSignal):Promise<string|undefined>{
-  const q=\`appProperties has { key='library' and value='\${DERIVATIVE_MARKER}' } and appProperties has { key='originalId' and value='\${originalId}' } and appProperties has { key='kind' and value='\${kind}' } and trashed=false\`;
+async function findExisting(email:string,originalId:string,kind:Kind,_signal:AbortSignal):Promise<string|undefined>{
+  const q=`appProperties has { key='library' and value='${DERIVATIVE_MARKER}' } and appProperties has { key='originalId' and value='${originalId}' } and appProperties has { key='kind' and value='${kind}' } and trashed=false`;
   return (await listing(email,q))[0]?.id;
 }
 async function ensureFolder(email:string,signal:AbortSignal):Promise<string>{
@@ -33,16 +33,16 @@ async function ensureFolder(email:string,signal:AbortSignal):Promise<string>{
   const metadata={name:'Photos App optimized previews',mimeType:'application/vnd.google-apps.folder',appProperties:{library:DERIVATIVE_FOLDER_MARKER,version:DERIVATIVE_VERSION}};
   return (await json<DriveFile>(email,'drive/v3/files?fields=id,name,mimeType,appProperties',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(metadata)},signal)).id;
 }
-async function uploadDerivative(email:string,originalId:string,kind:Kind,blob:Blob,signal:AbortSignal):Promise<string>{
+async function uploadDerivative(email:string,folderId:string,originalId:string,kind:Kind,blob:Blob,signal:AbortSignal):Promise<string>{
   const id=(await json<{ids:string[]}>(email,'drive/v3/files/generateIds?count=1&space=drive&type=files',{},signal)).ids[0];
-  const boundary=\`photos_derivative_\${crypto.randomUUID()}\`;
-  const metadata={id,name:\`Photos preview \${originalId} \${kind}.webp\`,mimeType:'image/webp',appProperties:{library:DERIVATIVE_MARKER,version:DERIVATIVE_VERSION,originalId,kind}};
+  const boundary=`photos_derivative_${crypto.randomUUID()}`;
+  const metadata={id,name:`Photos preview ${originalId} ${kind}.webp`,mimeType:'image/webp',parents:[folderId],appProperties:{library:DERIVATIVE_MARKER,version:DERIVATIVE_VERSION,originalId,kind}};
   const body=new Blob([
-    \`--\${boundary}\\r\\nContent-Type: application/json; charset=UTF-8\\r\\n\\r\\n\${JSON.stringify(metadata)}\\r\\n\`,
-    \`--\${boundary}\\r\\nContent-Type: image/webp\\r\\n\\r\\n\`,blob,\`\\r\\n--\${boundary}--\`
-  ],{type:\`multipart/related; boundary=\${boundary}\`});
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`,
+    `--${boundary}\r\nContent-Type: image/webp\r\n\r\n`,blob,`\r\n--${boundary}--`
+  ],{type:`multipart/related; boundary=${boundary}`});
   const response=await checked(await request(email,'upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,size,appProperties',{
-    method:'POST',headers:{'Content-Type':\`multipart/related; boundary=\${boundary}\`},body
+    method:'POST',headers:{'Content-Type':`multipart/related; boundary=${boundary}`},body
   },signal));
   const uploaded=await response.json() as DriveFile;
   if(uploaded.id!==id)throw new Error('Drive returned an unexpected preview file.');
@@ -58,11 +58,12 @@ export async function ensureImageDerivatives(file:File,media:Media,signal:AbortS
   if(!screen)screen=await findExisting(media.email,media.id,'screen',signal);
   let generated:Derivative[]|undefined;
   if(!grid||!screen)generated=await makeImageDerivatives(file);
-  if(!grid)grid=await uploadDerivative(media.email,media.id,'grid',generated!.find(x=>x.kind==='grid')!.blob,signal);
-  if(!screen)screen=await uploadDerivative(media.email,media.id,'screen',generated!.find(x=>x.kind==='screen')!.blob,signal);
+  const folderId=(!grid||!screen)?await ensureFolder(media.email,signal):'';
+  if(!grid)grid=await uploadDerivative(media.email,folderId,media.id,'grid',generated!.find(x=>x.kind==='grid')!.blob,signal);
+  if(!screen)screen=await uploadDerivative(media.email,folderId,media.id,'screen',generated!.find(x=>x.kind==='screen')!.blob,signal);
 
   const appProperties={...props,[GRID_DERIVATIVE_KEY]:grid,[SCREEN_DERIVATIVE_KEY]:screen,derivativeVersion:DERIVATIVE_VERSION};
-  const updated=await json<DriveFile>(media.email,\`drive/v3/files/\${encodeURIComponent(media.id)}?fields=\${fields}\`,{
+  const updated=await json<DriveFile>(media.email,`drive/v3/files/${encodeURIComponent(media.id)}?fields=${fields}`,{
     method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({appProperties})
   },signal);
   return {...updated,email:media.email};
