@@ -8,7 +8,7 @@ export class ThumbnailCache {
   private queue:Entry[]=[];
   private active=0;
   private scheduled=false;
-  constructor(private loader:(m:Media,s:AbortSignal,priority:number)=>Promise<HTMLImageElement>,private concurrency=6,private budget=32*1024*1024,private capacity=240){}
+  constructor(private loader:(m:Media,s:AbortSignal,priority:number)=>Promise<HTMLImageElement>,private concurrency=12,private budget=96*1024*1024,private capacity=600){}
   peek(m:Media){return this.entries.get(keyOf(m))?.image;}
   acquire(m:Media,priority=0){
     const key=keyOf(m);let entry=this.entries.get(key);
@@ -17,6 +17,22 @@ export class ThumbnailCache {
     return {promise:e.promise,promote:()=>{e.priority=0;this.schedule();},release:()=>{if(released)return;released=true;e.users--;if(!e.users&&!e.image)this.remove(key,e);this.trim();}};
   }
   clear(email?:string,id?:string){for(const [key,e] of this.entries)if((!email||e.media.email===email)&&(!id||e.media.id===id))this.remove(key,e);}
+  warm(items:Media[],limit=600){
+    const wanted=new Set(items.slice(0,limit).map(keyOf));
+    // Cancel only old background work; never disturb thumbnails currently mounted in the UI.
+    for(const [key,e] of this.entries)if(!wanted.has(key)&&!e.users&&!e.image)this.remove(key,e);
+    for(const m of items.slice(0,limit)){
+      const key=keyOf(m);if(this.entries.has(key))continue;
+      let resolve!:(image:HTMLImageElement)=>void,reject!:(error:unknown)=>void;
+      const promise=new Promise<HTMLImageElement>((yes,no)=>{resolve=yes;reject=no;});
+      const entry:Entry={media:m,priority:2,users:0,started:false,controller:new AbortController(),promise,resolve,reject};
+      // Background warming is best-effort; avoid unhandled rejection noise for expired links.
+      void promise.catch(()=>{});
+      this.entries.set(key,entry);this.queue.push(entry);
+    }
+    this.schedule();
+  }
+
   private touch(key:string,e:Entry){this.entries.delete(key);this.entries.set(key,e);}
   private remove(key:string,e:Entry){if(this.entries.get(key)!==e)return;this.entries.delete(key);this.queue=this.queue.filter(x=>x!==e);if(!e.image){e.controller.abort();e.reject(new DOMException('Thumbnail left the viewport','AbortError'));}}
   private trim(){let bytes=0,count=0;for(const e of this.entries.values())if(e.image){bytes+=e.image.naturalWidth*e.image.naturalHeight*4;count++;}for(const [key,e] of this.entries){if(bytes<=this.budget&&count<=this.capacity)break;if(e.image&&!e.users){bytes-=e.image.naturalWidth*e.image.naturalHeight*4;count--;this.remove(key,e);}}}
