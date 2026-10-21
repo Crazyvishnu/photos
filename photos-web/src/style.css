@@ -30,3 +30,10 @@ dialog.viewer{max-width:none;max-height:none;width:100vw;height:100dvh;margin:0;
 .preview-notice{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:max-content;max-width:90%;display:flex;gap:12px;align-items:center;z-index:4;background:#ffffffed;color:#37434a;border:1px solid #e5e9ee;padding:12px 16px;border-radius:14px;font-size:11px;box-shadow:0 3px 15px #0001}
 .preview-notice button{color:#0b57d0;font-weight:600;white-space:nowrap}.preview-notice a{white-space:nowrap;color:#0b57d0}.preview-state{pointer-events:none}
 @media(max-width:720px){.preview-notice{flex-wrap:wrap;gap:8px;font-size:10px}.preview-notice span{flex:1;min-width:160px}}
+
+.thumbnail-host{position:relative;display:block;width:100%;height:100%;overflow:hidden;background:var(--soft)}
+.thumbnail-image-host{position:absolute;inset:0}.thumbnail-image-host img{display:block;width:100%;height:100%;object-fit:cover}
+.thumbnail-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:linear-gradient(135deg,var(--soft),var(--surface));color:var(--muted);pointer-events:none}
+.thumbnail-placeholder span{opacity:.25}.thumbnail-placeholder small{font-size:10px}.thumbnail-placeholder.failed span{opacity:.6}
+.viewer-thumbnail-layer{position:absolute;inset:0;background:transparent!important;pointer-events:none}
+.viewer-thumbnail-layer .thumbnail-image-host img{object-fit:contain}.viewer-thumbnail-layer .thumbnail-placeholder{background:transparent}

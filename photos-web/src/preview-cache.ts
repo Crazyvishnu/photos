@@ -28,6 +28,7 @@ export class PreviewCache {
   }
   prefetch(m:Media){if(this.queue.length<2&&m.mimeType.startsWith('image/')&&Number(m.size||0)<=12*1024*1024)void this.get(m,false).catch(()=>{});}
   release(){this.pinned='';this.trim();}
+  stop(){for(const [key,e] of this.entries)if(!e.value)this.remove(key,e);}
   clear(email?:string,id?:string){for(const [key,e] of this.entries)if((!email||e.media.email===email)&&(!id||e.media.id===id))this.remove(key,e);}
   private touch(key:string,e:Entry){this.entries.delete(key);this.entries.set(key,e);}
   private remove(key:string,e:Entry){

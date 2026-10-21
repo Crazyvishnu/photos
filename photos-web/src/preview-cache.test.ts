@@ -42,4 +42,5 @@ it('renders all 4,450 photos and videos without a show-more step',()=>{
   const items=Array.from({length:4450},(_,i)=>({...photo(String(i)),mimeType:i%2?'image/jpeg':'video/mp4'}));
   const html=renderToStaticMarkup(createElement(PhotoGrid,{items,selection:new Set<string>(),badges:true,onOpen:()=>{},onToggle:()=>{},onSelectDay:()=>{}}));
   expect((html.match(/class="photo-open"/g)||[]).length).toBe(4450);expect(html).toContain('Open 4449.jpg');expect(html).not.toContain('Show more');
+  expect(html).not.toContain('<img');
 });
