@@ -51,7 +51,7 @@ async function uploadDerivative(email:string,folderId:string,originalId:string,k
 export async function ensureImageDerivatives(file:File,media:Media,signal:AbortSignal):Promise<Media>{
   if(!file.type.startsWith('image/'))return media;
   const props={...(media.appProperties||{})};
-  let grid=props[GRID_DERIVATIVE_KEY],screen=props[SCREEN_DERIVATIVE_KEY];
+  let grid:string|undefined=props[GRID_DERIVATIVE_KEY],screen:string|undefined=props[SCREEN_DERIVATIVE_KEY];
   if(grid&&screen&&props.derivativeVersion===DERIVATIVE_VERSION)return media;
 
   if(!grid)grid=await findExisting(media.email,media.id,'grid',signal);
