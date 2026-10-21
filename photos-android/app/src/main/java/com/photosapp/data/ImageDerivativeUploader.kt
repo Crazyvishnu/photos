@@ -102,7 +102,7 @@ object ImageDerivativeUploader {
                 .put("version", VERSION)
                 .put("originalId", originalId)
                 .put("kind", kind))
-        val body = MultipartBody.Builder("photos_\${UUID.randomUUID()}")
+        val body = MultipartBody.Builder("photos_" + UUID.randomUUID())
             .setType("multipart/related".toMediaType())
             .addPart(metadata.toString().toRequestBody(JSON))
             .addPart(bytes.toRequestBody(WEBP))
