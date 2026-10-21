@@ -30,6 +30,15 @@ describe('Visible thumbnail scheduling',()=>{
     for(const id of ['a','b','c']){const lease=cache.acquire(media(id),0);await lease.promise;lease.release();}
     expect(cache.peek(media('a'))).toBeUndefined();expect(cache.peek(media('c'))?.src).toBe('c');cache.clear('test@example.test');expect(cache.peek(media('c'))).toBeUndefined();
   });
+  it('warms a month in the background but lets a visible photo jump ahead of queued month work',async()=>{
+    const order:string[]=[],finish=new Map<string,()=>void>();
+    const cache=new ThumbnailCache(m=>new Promise(resolve=>{order.push(m.id);finish.set(m.id,()=>resolve(image(m.id)));}),2);
+    cache.warm([media('m1'),media('m2'),media('m3'),media('m4')]);
+    await tick();expect(order).toEqual(['m1','m2']);
+    const visible=cache.acquire(media('visible'),0);
+    finish.get('m1')!();await tick();expect(order).toEqual(['m1','m2','visible']);
+    finish.get('visible')!();finish.get('m2')!();await visible.promise;await tick();
+  });
   it('retries a failed thumbnail rather than retaining an unusable cache entry',async()=>{
     const loader=vi.fn().mockRejectedValueOnce(new Error('expired')).mockResolvedValue(image('fresh'));const cache=new ThumbnailCache(loader);
     await expect(cache.acquire(media('a'),0).promise).rejects.toThrow('expired');expect((await cache.acquire(media('a'),0).promise).src).toBe('fresh');
