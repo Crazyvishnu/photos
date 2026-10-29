@@ -44,7 +44,7 @@ To use another project, set `VITE_GOOGLE_CLIENT_ID` in an untracked `.env.local`
 
 ## Features
 
-- The complete timeline is available in one continuous scroll, without a Show more button. Explicit viewport observation assigns image sources only near the screen; a six-transfer priority queue loads visible previews first and cancels abandoned requests. Loaded thumbnails are retained in a bounded 32 MiB / 240-item session cache for scrolling back. Hovering or keyboard-focusing a grid photo now starts a bounded original prefetch.
+- The complete timeline is available in one continuous scroll, without a Show more button. Explicit viewport observation assigns image sources only near the screen; a twelve-transfer priority queue loads visible previews first and cancels abandoned requests. Loaded thumbnails are retained in a bounded 96 MiB / 600-item session cache for scrolling back. Hovering or keyboard-focusing a grid photo now starts a bounded original prefetch.
 - Filename/account/date search; month, account and media-type filters; comfortable/compact grids; newest/oldest order.
 - Multi-account connection, actual Drive quotas and Google storage links.
 - Original-byte uploads, chunked hashing in a Web Worker, content-hash duplicate checks, saved resumable sessions and progress/pause/retry.

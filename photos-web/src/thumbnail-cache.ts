@@ -1,6 +1,7 @@
 import { backendEnabled, connected } from './auth';
 import { json } from './drive';
-import { keyOf, type Media } from './model';
+import { GRID_DERIVATIVE_KEY, keyOf, type Media } from './model';
+import { derivativeBlob } from './derivative-cache';
 
 type Entry={media:Media;priority:number;users:number;started:boolean;controller:AbortController;promise:Promise<HTMLImageElement>;resolve:(image:HTMLImageElement)=>void;reject:(error:unknown)=>void;image?:HTMLImageElement};
 export class ThumbnailCache {
@@ -8,7 +9,7 @@ export class ThumbnailCache {
   private queue:Entry[]=[];
   private active=0;
   private scheduled=false;
-  constructor(private loader:(m:Media,s:AbortSignal,priority:number)=>Promise<HTMLImageElement>,private concurrency=6,private budget=32*1024*1024,private capacity=240){}
+  constructor(private loader:(m:Media,s:AbortSignal,priority:number)=>Promise<HTMLImageElement>,private concurrency=12,private budget=96*1024*1024,private capacity=600){}
   peek(m:Media){return this.entries.get(keyOf(m))?.image;}
   acquire(m:Media,priority=0){
     const key=keyOf(m);let entry=this.entries.get(key);
@@ -17,8 +18,24 @@ export class ThumbnailCache {
     return {promise:e.promise,promote:()=>{e.priority=0;this.schedule();},release:()=>{if(released)return;released=true;e.users--;if(!e.users&&!e.image)this.remove(key,e);this.trim();}};
   }
   clear(email?:string,id?:string){for(const [key,e] of this.entries)if((!email||e.media.email===email)&&(!id||e.media.id===id))this.remove(key,e);}
+  warm(items:Media[],limit=600){
+    const wanted=new Set(items.slice(0,limit).map(keyOf));
+    // Cancel only old background work; never disturb thumbnails currently mounted in the UI.
+    for(const [key,e] of this.entries)if(!wanted.has(key)&&!e.users&&!e.image)this.remove(key,e);
+    for(const m of items.slice(0,limit)){
+      const key=keyOf(m);if(this.entries.has(key))continue;
+      let resolve!:(image:HTMLImageElement)=>void,reject!:(error:unknown)=>void;
+      const promise=new Promise<HTMLImageElement>((yes,no)=>{resolve=yes;reject=no;});
+      const entry:Entry={media:m,priority:2,users:0,started:false,controller:new AbortController(),promise,resolve,reject};
+      // Background warming is best-effort; avoid unhandled rejection noise for expired links.
+      void promise.catch(()=>{});
+      this.entries.set(key,entry);this.queue.push(entry);
+    }
+    this.schedule();
+  }
+
   private touch(key:string,e:Entry){this.entries.delete(key);this.entries.set(key,e);}
-  private remove(key:string,e:Entry){if(this.entries.get(key)!==e)return;this.entries.delete(key);this.queue=this.queue.filter(x=>x!==e);if(!e.image){e.controller.abort();e.reject(new DOMException('Thumbnail left the viewport','AbortError'));}}
+  private remove(key:string,e:Entry){if(this.entries.get(key)!==e)return;this.entries.delete(key);this.queue=this.queue.filter(x=>x!==e);if(e.image?.dataset?.objectUrl)URL.revokeObjectURL(e.image.dataset.objectUrl);if(!e.image){e.controller.abort();e.reject(new DOMException('Thumbnail left the viewport','AbortError'));}}
   private trim(){let bytes=0,count=0;for(const e of this.entries.values())if(e.image){bytes+=e.image.naturalWidth*e.image.naturalHeight*4;count++;}for(const [key,e] of this.entries){if(bytes<=this.budget&&count<=this.capacity)break;if(e.image&&!e.users){bytes-=e.image.naturalWidth*e.image.naturalHeight*4;count--;this.remove(key,e);}}}
   private schedule(){if(this.scheduled)return;this.scheduled=true;queueMicrotask(()=>{this.scheduled=false;this.pump();});}
   private pump(){
@@ -29,6 +46,11 @@ export class ThumbnailCache {
   }
 }
 
+async function readBlobImage(blob:Blob,signal:AbortSignal,priority:number):Promise<HTMLImageElement>{
+  const url=URL.createObjectURL(blob);
+  try{const image=await readImage(url,signal,priority);image.dataset.objectUrl=url;return image;}
+  catch(e){URL.revokeObjectURL(url);throw e;}
+}
 function readImage(url:string,signal:AbortSignal,priority:number):Promise<HTMLImageElement>{
   return new Promise((resolve,reject)=>{
     if(signal.aborted){reject(new DOMException('Aborted','AbortError'));return;}
@@ -43,6 +65,8 @@ function readImage(url:string,signal:AbortSignal,priority:number):Promise<HTMLIm
 }
 export async function loadThumbnail(m:Media,signal:AbortSignal,priority:number){
   if(backendEnabled)return readImage('/api/thumbnail?'+new URLSearchParams({email:m.email,id:m.id}),signal,priority);
+  const derivativeId=m.appProperties?.[GRID_DERIVATIVE_KEY];
+  if(derivativeId&&connected(m.email)){try{return await readBlobImage(await derivativeBlob(m.email,derivativeId,signal),signal,priority);}catch(e){if(signal.aborted)throw e;}}
   if(m.thumbnailLink){try{return await readImage(m.thumbnailLink,signal,priority);}catch(e){if(signal.aborted)throw e;}}
   if(!connected(m.email))throw new Error('Reconnect this account to refresh its preview.');
   // Drive thumbnail links expire without a media change. Refresh only this visible file.

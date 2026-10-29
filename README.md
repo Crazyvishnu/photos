@@ -341,7 +341,7 @@ Room caches account/library metadata and resumable session URLs on the device. R
 
 ## Validation and known limitations
 
-As of 2026-10-29, the latest web suite has **35 passing tests** and the backend suite has **13 passing tests**. The backend-enabled TypeScript/Vite production build and Cloudflare deployment succeeded. Android 2.0.4 passed local debug assembly and lint on 2026-10-29; Android build success is not proof of behavior on a phone.
+As of 2026-10-29, the latest web suite has **43 passing tests** and the backend suite has **13 passing tests**. The backend-enabled TypeScript/Vite production build and Cloudflare deployment succeeded. Android 2.0.4 passed local debug assembly and lint on 2026-10-29; Android build success is not proof of behavior on a phone.
 
 Google sign-in reached the deployed callback. The browser used for inspection showed zero media under the connected account, so real-library original prefetch, long-term token renewal and video playback remain unverified. Do not report these as proven by mocked tests. Known issues and precise reproduction steps belong in the [repair guide](docs/MAINTENANCE.md).
 

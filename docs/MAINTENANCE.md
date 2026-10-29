@@ -97,12 +97,16 @@ Pushing `main` triggers the separate static Pages workflow when web files change
 
 ## Current evidence and open validation gaps (2026-10-29)
 
-- Web: 35 passing automated checks; TypeScript/Vite static and backend-enabled builds passed.
+- Web: 43 passing automated checks; TypeScript/Vite static and backend-enabled builds passed.
 - Worker: 13 passing tests with in-memory SQLite and mocked Google responses.
 - Cloudflare deployed version at the last media update: `f2cb1a03-0e13-4f1d-8f63-43a22a5835cb` (verify dashboard for newer versions).
 - Google callback was reached. Real-library prefetch/playback and renewal after token expiry were not verified; connected inspection account showed zero items and a saved-library/reconnect status after reload. Investigate this status rather than declaring persistent access solved.
 - Android 2.0.4 (15) debug build/lint passed on 2026-10-29; no hardware proof of scheduler reliability, reinstall recovery or viewer stability.
 - `REA-REVIEW.md` records static analysis limits. No successful reference-app decompilation or full Google Photos parity is claimed.
+
+## Reconciling different checkouts
+
+Before publishing, fetch the current remote branch and compare all source and test files, including unchanged local files. The 2026-10-29 publication initially combined an older thumbnail cache with a newer remote test that required `ThumbnailCache.warm`; CI exposed the mismatch. Restore the bounded background-warming API and derivative handling rather than deleting the remote regression test. Validate the combined checkout (43 web tests), not only a stale local tree. Remote derivative helpers (`derivative-cache.ts`, `screen-preview.ts`, `video-playback.ts`) may exist even if a local checkout predates them.
 
 ## Handoff format for every repair
 
