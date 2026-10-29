@@ -1,6 +1,6 @@
 # Photos App for the web
 
-A responsive React/TypeScript website using the same Google Drive library as Android. The web client is a static app: Google handles authorization and originals go directly to the linked Drive accounts.
+A responsive React/TypeScript website using the same Google Drive library as Android. The primary deployment uses the same-origin Cloudflare backend for Google authorization and streamed media. A static GitHub Pages compatibility build remains available. See [backend setup](../photos-cloudflare/README.md) and the [repair guide](../docs/MAINTENANCE.md).
 
 ## Run locally
 
@@ -20,7 +20,13 @@ npm run build
 
 `dist/` contains the production site. Relative asset URLs allow deployment under `/photos/` or a custom-domain root. Navigation is state-based, so GitHub Pages does not need an SPA rewrite.
 
-## OAuth configuration
+## Cloudflare mode (primary deployment)
+
+Run `npm ci` in this directory, then deploy using `npx wrangler deploy --config photos-cloudflare/wrangler.toml` from the repository root. The configured build automatically sets `VITE_AUTH_BACKEND=true`. Both website and API must share the same origin. Never enable this flag on GitHub Pages: it has no `/api` backend.
+
+Google tokens remain encrypted in D1; the browser uses an HttpOnly session cookie. Local Vite development defaults to the legacy mode described below.
+
+## Static-mode OAuth configuration
 
 The included **public** Web client ID is from the same Cloud project as the existing Android client. A client ID is not a client secret. Never put a client secret, token or signing key into a Vite environment variable or this repository.
 
@@ -38,11 +44,11 @@ To use another project, set `VITE_GOOGLE_CLIENT_ID` in an untracked `.env.local`
 
 ## Features
 
-- The complete timeline is available in one continuous scroll, without a Show more button. Explicit viewport observation assigns image sources only near the screen; a six-transfer priority queue loads visible previews first and cancels abandoned requests. Loaded thumbnails are retained in a bounded 32 MiB / 240-item session cache for scrolling back. Hovering grid tiles never downloads full originals.
+- The complete timeline is available in one continuous scroll, without a Show more button. Explicit viewport observation assigns image sources only near the screen; a six-transfer priority queue loads visible previews first and cancels abandoned requests. Loaded thumbnails are retained in a bounded 32 MiB / 240-item session cache for scrolling back. Hovering or keyboard-focusing a grid photo now starts a bounded original prefetch.
 - Filename/account/date search; month, account and media-type filters; comfortable/compact grids; newest/oldest order.
 - Multi-account connection, actual Drive quotas and Google storage links.
 - Original-byte uploads, chunked hashing in a Web Worker, content-hash duplicate checks, saved resumable sessions and progress/pause/retry.
-- Google-Photos-style progressive loading: the timeline warms up to 600 Drive thumbnails in the background with visible tiles taking priority. Opening a photo shows the cached/Drive preview immediately and automatically downloads/upgrades to the authenticated original; after the current original finishes, adjacent photo originals are prefetched for faster swiping. There is no separate Load original step. Left/right photo areas navigate; the center toggles controls in white/black view.
+- Instant available-thumbnail fallback while originals download, bounded session-only original caching, and original prefetch up to six items ahead and two behind (excluding videos). Originals are decoded before caching. Swipe horizontally, use arrow keys or click the left/right areas to browse. At most two originals transfer concurrently; first-time retrieval and swiping faster than downloads can still reveal the thumbnail. Left/right photo areas navigate; the center toggles controls in white/black view.
 - Image viewer, original downloads, Google Drive video previews, favorites and editable timeline dates.
 - Bulk selection, custom albums, automatic collections, Bin, restoration and confirmed permanent deletion.
 - Light/dark/system appearance, backup badges, upload destination, optional minute refresh, keyboard shortcuts and metadata-index export.
@@ -58,13 +64,13 @@ Album conflict resolution uses the newest timestamp. It is not collaborative edi
 
 ## Browser limits and privacy
 
-- Keep the tab open during uploads. After reload, reconnect all accounts and reselect the same files to resume saved sessions. The website cannot continuously back up a phone gallery while closed.
-- Access tokens are retained in sessionStorage for this tab until Google expiry, and removed on disconnect. Account identities, library metadata and resumable session URLs are cached in IndexedDB on this device; removing an account clears its displayed library cache. Upload-session records remain private in this browser so unfinished originals can resume after reconnection.
-- Preview originals are kept only in a bounded in-memory cache (64 MiB / 8 items, with the active photo retained). Removing an account clears its cached originals. No photo bytes are persisted into browser storage. First-time cloud retrieval still depends on connection speed; available thumbnails remain visible during the transfer, and failed originals have a retry action.
+- Keep the tab open during uploads. In static mode, reconnect expired accounts; in either mode reselect the same files to resume saved sessions. The website cannot continuously back up a phone gallery while closed.
+- In static mode only, access tokens are retained in sessionStorage for this tab until Google expiry, and removed on disconnect. Account identities, library metadata and resumable session URLs are cached in IndexedDB on this device; removing an account clears its displayed library cache. Upload-session records remain private in this browser so unfinished originals can resume after reconnection.
+- Preview originals are kept only in a bounded in-memory cache (128 MiB / 12 items, with the active photo retained). Removing an account clears its cached originals. No photo bytes are persisted into browser storage. First-time cloud retrieval still depends on connection speed; available thumbnails remain visible during the transfer, and failed originals have a retry action.
 - Original files are not persisted into browser storage. Chunking changes transfer boundaries, never image/video bytes. Photo EXIF dates are used when supported; otherwise file modification time is labelled as the fallback and can be edited.
 - Google Photos cloud-only items must first be shared/downloaded/exported as actual files. This is a Google Drive library, not an automatic Google Photos migration.
 - Private thumbnails use Drive-provided short-lived URLs and may expire or be blocked. A failed visible thumbnail refreshes only its own metadata once when the account is connected. Preview errors show an Open to view fallback. Original and thumbnail caches are both tab-session and are cleared when an account is removed. The original can still be opened after reconnecting. Full-image previews are capped at 100 MB; large files open through Drive.
-- Video playback uses an authenticated same-origin range proxy that caps browser requests to 4 MiB chunks, so an open-ended `bytes=0-` request cannot silently turn into a whole-file transfer before metadata appears. Missing `Content-Range` headers are reconstructed from the exact forwarded range and known file size. If range streaming still fails, the app downloads the authenticated original into a temporary in-memory blob before considering Google Drive's embedded preview. The Drive iframe remains only a codec/final fallback because third-party cookies can block it. A Drive thumbnail is used as the video poster while metadata loads. No access token is put into an image/video URL.
+- Video playback uses a native video element. Cloudflare mode streams authenticated byte ranges through `/api/media`; static mode uses `public/media-worker.js` and a message channel for authorization. Neither path waits for a complete video blob. Browser codec support still applies; Open in Drive is a fallback. Never put bearer tokens in media URLs.
 - Permanent deletion removes the cloud original; phone originals are not directly deleted by this website. Bin retention follows Drive's policy.
 - No analytics or advertisements. Google Identity, Drive previews and the Google-hosted font contact Google services.
 

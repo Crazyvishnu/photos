@@ -4,7 +4,9 @@
         <item name="colorPrimary">@color/accent</item>
         <item name="colorPrimaryVariant">@color/accent_light</item>
         <item name="colorOnPrimary">@color/on_accent</item>
-        <item name="colorSurface">@color/surface</item>
+        <item name="colorSurface">@color/background</item>
+        <item name="android:fontFamily">sans-serif</item>
+
         <item name="colorOnSurface">@color/text_primary</item>
         <item name="colorPrimaryContainer">@color/accent_light</item>
         <item name="colorOnPrimaryContainer">@color/text_primary</item>

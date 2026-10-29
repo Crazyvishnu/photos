@@ -3,21 +3,17 @@ package com.photosapp.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import androidx.work.WorkManager
-import com.photosapp.worker.BackupWorker
+import com.photosapp.worker.BackupScheduler
+import kotlinx.coroutines.*
 
-/**
- * Restarts the periodic backup work after device reboot.
- * WorkManager usually survives reboot on API 23+, but this is extra safety.
- */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-                BackupWorker.WORK_NAME,
-                androidx.work.ExistingPeriodicWorkPolicy.KEEP,
-                BackupWorker.buildRequest()
-            )
+        if (intent.action !in listOf(Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED)) return
+        val pending = goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            try { BackupScheduler.ensure(context.applicationContext) }
+            catch (e: Exception) { android.util.Log.e("BackupSchedule", "Unable to restore backup scheduling", e) }
+            finally { pending.finish() }
         }
     }
 }

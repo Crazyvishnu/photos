@@ -1,5 +1,5 @@
-import { connected, disconnect, token } from './auth';
-import { ALBUM_MARKER, GRID_DERIVATIVE_KEY, MEDIA_MARKER, SCREEN_DERIVATIVE_KEY, isMedia, validateAlbum, type Account, type Album, type Cache, type DriveFile, type Media } from './model';
+import { backendEnabled, connected, disconnect, token } from './auth';
+import { ALBUM_MARKER, MEDIA_MARKER, isMedia, validateAlbum, type Account, type Album, type Cache, type DriveFile, type Media } from './model';
 import { load, save } from './store';
 const ROOT='https://www.googleapis.com/';
 export const fields='id,name,mimeType,size,createdTime,thumbnailLink,trashed,appProperties,imageMediaMetadata(width,height,time),videoMediaMetadata(durationMillis)';
@@ -7,7 +7,7 @@ export class DriveError extends Error { constructor(public status:number,public 
 export async function request(email:string, path:string, init:RequestInit={}, signal?:AbortSignal):Promise<Response> {
   const url=new URL(path,ROOT);if(url.origin!==new URL(ROOT).origin) throw new Error('Unexpected Drive endpoint.');
   let res:Response;
-  try { res=await fetch(url,{...init,headers:{...Object.fromEntries(new Headers(init.headers)),Authorization:`Bearer ${token(email)}`},signal:signal ? AbortSignal.any([signal,AbortSignal.timeout(150000)]) : AbortSignal.timeout(150000)}); }
+  try { res=await fetch(backendEnabled?'/api/drive?'+new URLSearchParams({email,path:url.href}):url,{...init,credentials:backendEnabled?'same-origin':init.credentials,headers:{...Object.fromEntries(new Headers(init.headers)),...(backendEnabled?{'X-Photos-CSRF':'1'}:{Authorization:`Bearer ${token(email)}`})},signal:signal ? AbortSignal.any([signal,AbortSignal.timeout(150000)]) : AbortSignal.timeout(150000)}); }
   catch(e){ if(signal?.aborted) throw new DOMException('Upload paused','AbortError'); if(!navigator.onLine) throw new Error('You are offline. Reconnect and retry.'); throw e; }
   if(res.status===401){disconnect(email);throw new Error(`Reconnect ${email}; Google authorization expired.`);}
   return res;
@@ -44,13 +44,7 @@ export async function changeMedia(m:Media,kind:'favorite'|'date'|'trash'|'restor
   // Read the current version before a date/favorite edit to avoid a stale browser timestamp.
   const current=await json<DriveFile>(m.email,`drive/v3/files/${encodeURIComponent(m.id)}?fields=${fields}`);
   if(current.appProperties?.library!==MEDIA_MARKER)throw new Error('This file is not part of the app library.');
-  if(kind==='delete'){
-    if(!current.trashed)throw new Error('This item was restored on another device. Refresh before deleting.');
-    for(const id of [current.appProperties?.[GRID_DERIVATIVE_KEY],current.appProperties?.[SCREEN_DERIVATIVE_KEY]].filter(Boolean) as string[]){
-      try{const r=await request(m.email,`drive/v3/files/${encodeURIComponent(id)}`,{method:'DELETE'});if(!r.ok&&r.status!==404)await checked(r);}catch{/* Preview cleanup is best-effort; never strand the original in Bin. */}
-    }
-    await checked(await request(m.email,`drive/v3/files/${encodeURIComponent(m.id)}`,{method:'DELETE'}));return null;
-  }
+  if(kind==='delete'){if(!current.trashed)throw new Error('This item was restored on another device. Refresh before deleting.');await checked(await request(m.email,`drive/v3/files/${encodeURIComponent(m.id)}`,{method:'DELETE'}));return null;}
   const props=current.appProperties||{};
   const body=kind==='favorite'?{appProperties:{favorite:String(props.favorite!=='true'),favoriteEditedAt:String(Math.max(Date.now(),Number(props.favoriteEditedAt||0)+1))}}:
     kind==='date'?{appProperties:{capturedAt:String(Math.floor(date!/1000)),dateEditedAt:String(Math.max(Date.now(),Number(props.dateEditedAt||0)+1)),dateSource:'edited'}}:{trashed:kind==='trash'};

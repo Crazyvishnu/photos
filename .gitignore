@@ -46,6 +46,9 @@ Thumbs.db
 *.log
 
 # Local work notes and agent configuration
-/local-notes/
+**/local-notes/
 /.agents/
 /.codex/
+
+**/.wrangler/
+**/.dev.vars*

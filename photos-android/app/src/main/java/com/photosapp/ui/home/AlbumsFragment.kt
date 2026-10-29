@@ -30,13 +30,24 @@ class AlbumsFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
         val context = requireContext()
         val root = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(8), dp(16), 0) }
-        root.addView(MaterialButton(context).apply { text = "Bin · Restore or delete"; setOnClickListener { TrashFragment.open(this@AlbumsFragment) } }, LinearLayout.LayoutParams(-1, root.dp(56)))
-        root.addView(MaterialButton(context).apply {
-            text = "Create album"; setIconResource(R.drawable.ic_album)
-            setOnClickListener { AlbumActions.create(this@AlbumsFragment, vm) }
-        }, LinearLayout.LayoutParams(-1, root.dp(56)))
+        val shortcuts = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+        fun shortcut(label: String, icon: Int, action: () -> Unit) = MaterialButton(context,
+            null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = label; isAllCaps = false; cornerRadius = dp(20)
+            setIconResource(icon); iconTint = android.content.res.ColorStateList.valueOf(context.color(R.color.text_primary))
+            setTextColor(context.color(R.color.text_primary))
+            backgroundTintList = android.content.res.ColorStateList.valueOf(context.color(R.color.surface))
+            strokeWidth = 0; setOnClickListener { action() }
+        }
+        shortcuts.addView(shortcut("Bin", R.drawable.ic_view_bin) { TrashFragment.open(this@AlbumsFragment) },
+            LinearLayout.LayoutParams(0, root.dp(64), 1f).apply { marginEnd = root.dp(8) })
+        shortcuts.addView(shortcut("Create album", R.drawable.ic_view_add) { AlbumActions.create(this@AlbumsFragment, vm) },
+            LinearLayout.LayoutParams(0, root.dp(64), 1f))
+        root.addView(shortcuts)
         val search = com.google.android.material.textfield.TextInputEditText(context).apply {
-            hint = "Search albums"; isSingleLine = true; setTextColor(context.color(R.color.text_primary))
+            hint = "Search albums"; isSingleLine = true;
+            setPadding(dp(20), dp(8), dp(20), dp(8));
+            background = android.graphics.drawable.GradientDrawable().apply { setColor(context.color(R.color.surface)); cornerRadius = dp(28).toFloat() }; setTextColor(context.color(R.color.text_primary))
         }
         root.addView(search, LinearLayout.LayoutParams(-1, root.dp(56)))
         val list = RecyclerView(context).apply { tag = "albums_list"; layoutManager = GridLayoutManager(context, 2); clipToPadding = false; setPadding(0, dp(12), 0, dp(16)) }
@@ -61,13 +72,13 @@ private class AlbumAdapter(val click: (AlbumCollection) -> Unit, val longClick: 
     override fun onCreateViewHolder(parent: ViewGroup, type: Int): Holder {
         val context = parent.context
         val card = MaterialCardView(context).apply {
-            radius = dp(20).toFloat(); cardElevation = 0f; strokeWidth = 0
+            radius = dp(24).toFloat(); cardElevation = 0f; strokeWidth = 0
             setCardBackgroundColor(context.color(R.color.surface))
-            layoutParams = RecyclerView.LayoutParams(-1, -2).apply { setMargins(dp(4), dp(4), dp(4), dp(12)) }
+            layoutParams = RecyclerView.LayoutParams(-1, -2).apply { setMargins(dp(4), dp(8), dp(4), dp(12)) }
         }
         val column = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         val image = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP; setBackgroundColor(context.color(R.color.accent_light)) }
-        column.addView(image, LinearLayout.LayoutParams(-1, card.dp(140)))
+        column.addView(image, LinearLayout.LayoutParams(-1, card.dp(156)))
         val title = TextView(context).apply { textSize = 16f; setTextColor(context.color(R.color.text_primary)); setPadding(dp(12), dp(12), dp(12), 0); maxLines = 2 }
         val count = TextView(context).apply { textSize = 12f; setTextColor(context.color(R.color.text_secondary)); setPadding(dp(12), dp(4), dp(12), dp(14)) }
         column.addView(title); column.addView(count); card.addView(column)

@@ -4,7 +4,7 @@
     <FrameLayout android:id="@+id/top_chrome" android:layout_width="match_parent" android:layout_height="64dp" android:layout_gravity="top" android:background="@color/viewer_surface">
         <androidx.appcompat.widget.Toolbar android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="match_parent"
             app:navigationIcon="@drawable/ic_view_back" app:titleTextColor="@color/viewer_text" app:subtitleTextColor="@color/viewer_ink"/>
-        <LinearLayout android:id="@+id/date_header" android:layout_width="144dp" android:layout_height="match_parent" android:layout_gravity="center"
+        <LinearLayout android:id="@+id/date_header" android:layout_width="160dp" android:layout_height="match_parent" android:layout_gravity="center"
             android:orientation="vertical" android:gravity="center" android:clickable="true" android:focusable="true" android:background="?attr/selectableItemBackground" android:contentDescription="@string/viewer_date_action">
             <TextView android:id="@+id/viewer_date" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="16sp"
                 android:textColor="@color/viewer_text" android:fontFamily="sans-serif-medium" android:maxLines="1" android:drawableEnd="@drawable/ic_view_chevron" android:drawablePadding="2dp"/>
@@ -33,11 +33,11 @@
         <LinearLayout android:id="@+id/status_row" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="40dp"
             android:paddingHorizontal="12dp" android:gravity="center_vertical">
             <TextView android:id="@+id/photo_backup_status" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
-                android:gravity="center_vertical" android:textColor="@color/viewer_ink" android:textSize="12sp" android:drawablePadding="8dp" android:clickable="true" android:focusable="true"/>
+                android:gravity="center_vertical" android:textColor="@color/viewer_ink" android:textSize="13sp" android:drawablePadding="8dp" android:clickable="true" android:focusable="true"/>
             <com.google.android.material.button.MaterialButton android:id="@+id/show_details" style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content" android:layout_height="48dp" android:text="@string/media_details" android:textColor="@color/viewer_ink"/>
         </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="80dp" android:paddingHorizontal="8dp" android:gravity="center_vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="88dp" android:paddingHorizontal="8dp" android:gravity="center_vertical">
             <com.google.android.material.button.MaterialButton android:id="@+id/share_media" style="@style/ViewerAction" android:layout_width="0dp" android:layout_weight="1" android:layout_height="72dp" android:text="@string/viewer_share" app:icon="@drawable/ic_view_share"/>
             <com.google.android.material.button.MaterialButton android:id="@+id/edit_media" style="@style/ViewerAction" android:layout_width="0dp" android:layout_weight="1" android:layout_height="72dp" android:text="@string/viewer_edit" app:icon="@drawable/ic_view_edit"/>
             <com.google.android.material.button.MaterialButton android:id="@+id/add_to_album" style="@style/ViewerAction" android:layout_width="0dp" android:layout_weight="1" android:layout_height="72dp" android:text="@string/viewer_add_to" app:icon="@drawable/ic_view_add"/>

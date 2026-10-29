@@ -6,9 +6,9 @@
         <LinearLayout android:id="@+id/normal_toolbar" android:layout_width="match_parent" android:layout_height="match_parent"
             android:gravity="center_vertical" android:paddingHorizontal="20dp">
             <TextView android:id="@+id/library_title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                android:text="Photos" android:textColor="@color/text_primary" android:textSize="26sp" android:fontFamily="sans-serif-medium"/>
+                android:text="Photos" android:textColor="@color/text_primary" android:textSize="28sp" android:fontFamily="sans-serif"/>
             <ImageView android:id="@+id/open_bin" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp"
-                android:src="@android:drawable/ic_menu_delete" app:tint="@color/text_primary" android:contentDescription="Open Bin"
+                android:src="@drawable/ic_view_bin" app:tint="@color/text_primary" android:contentDescription="Open Bin"
                 android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true"/>
             <ImageView android:id="@+id/btn_account" android:layout_width="48dp" android:layout_height="48dp" android:padding="6dp"
                 android:src="@drawable/ic_account_circle" android:contentDescription="Manage linked accounts"
@@ -30,13 +30,13 @@
     <com.google.android.material.textfield.TextInputLayout android:id="@+id/search_container" android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp" app:boxBackgroundMode="filled" app:boxBackgroundColor="@color/surface"
         app:boxCornerRadiusTopStart="28dp" app:boxCornerRadiusTopEnd="28dp" app:boxCornerRadiusBottomStart="28dp" app:boxCornerRadiusBottomEnd="28dp"
-        app:boxStrokeWidth="0dp" app:boxStrokeWidthFocused="0dp" app:hintEnabled="false">
+        app:startIconDrawable="@drawable/ic_search_outline" app:startIconTint="@color/text_secondary" app:boxStrokeWidth="0dp" app:boxStrokeWidthFocused="0dp" app:hintEnabled="false">
         <com.google.android.material.textfield.TextInputEditText android:id="@+id/search_photos" android:layout_width="match_parent"
-            android:layout_height="56dp" android:hint="Search your photos by name" android:singleLine="true" android:inputType="text"
+            android:layout_height="56dp" android:hint="Search your photos" android:singleLine="true" android:inputType="text"
             android:paddingHorizontal="20dp" android:background="@android:color/transparent" android:textSize="16sp"/>
     </com.google.android.material.textfield.TextInputLayout>
     <com.google.android.material.card.MaterialCardView android:id="@+id/backup_card" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp" android:layout_marginTop="12dp" app:cardCornerRadius="20dp" app:strokeWidth="0dp" app:cardElevation="0dp" app:cardBackgroundColor="@color/surface">
+        android:layout_marginHorizontal="16dp" android:layout_marginTop="16dp" app:cardCornerRadius="24dp" app:strokeWidth="0dp" app:cardElevation="0dp" app:cardBackgroundColor="@color/surface">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
                 <LinearLayout android:id="@+id/backup_details" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
@@ -58,7 +58,7 @@
     </com.google.android.material.card.MaterialCardView>
     <HorizontalScrollView android:id="@+id/filters_container" android:layout_width="match_parent" android:layout_height="wrap_content" android:scrollbars="none" android:fillViewport="true">
         <com.google.android.material.chip.ChipGroup android:id="@+id/backup_filters" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:paddingHorizontal="16dp" android:paddingTop="8dp" app:singleLine="true" app:singleSelection="true" app:selectionRequired="true" app:checkedChip="@id/filter_all">
+            android:paddingHorizontal="16dp" android:paddingTop="4dp" app:singleLine="true" app:singleSelection="true" app:selectionRequired="true" app:checkedChip="@id/filter_all">
             <com.google.android.material.chip.Chip android:id="@+id/filter_all" style="@style/Widget.Material3.Chip.Filter" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/backup_filter_all" android:checked="true"/>
             <com.google.android.material.chip.Chip android:id="@+id/filter_done" style="@style/Widget.Material3.Chip.Filter" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/backup_backed_up"/>
             <com.google.android.material.chip.Chip android:id="@+id/filter_uploading" style="@style/Widget.Material3.Chip.Filter" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/backup_filter_uploading"/>
@@ -94,6 +94,6 @@
     </FrameLayout>
     <FrameLayout android:id="@+id/collections_container" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:visibility="gone"/>
     <com.google.android.material.bottomnavigation.BottomNavigationView android:id="@+id/library_navigation"
-        android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@color/surface"
-        app:menu="@menu/library_navigation" app:labelVisibilityMode="labeled"/>
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@color/background" android:minHeight="80dp"
+        app:itemIconTint="@color/navigation_ink" app:itemTextColor="@color/navigation_ink" app:itemActiveIndicatorStyle="@style/PhotosNavigationIndicator" app:itemRippleColor="@color/accent_light" app:menu="@menu/library_navigation" app:labelVisibilityMode="labeled"/>
 </LinearLayout>

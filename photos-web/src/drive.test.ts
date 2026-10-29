@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const memory=vi.hoisted(()=>new Map<string,unknown>());
 vi.mock('./store',()=>({load:async(key:string,fallback:unknown)=>structuredClone(memory.get(key)??fallback),save:async(key:string,value:unknown)=>{memory.set(key,structuredClone(value));}}));
-vi.mock('./auth',()=>({token:()=> 'test-only-token',connected:()=>true,disconnect:vi.fn()}));
+vi.mock('./auth',()=>({backendEnabled:false,token:()=> 'test-only-token',connected:()=>true,disconnect:vi.fn()}));
 import { request, refreshAccount, changeMedia, downloadImage } from './drive';
 import { MEDIA_MARKER, type Cache, type Account, type Media } from './model';
 const account:Account={email:'test@example.test',name:'Test account',limit:1000000,usage:0};

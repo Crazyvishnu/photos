@@ -1,0 +1,30 @@
+name = "photos-app"
+main = "worker.mjs"
+compatibility_date = "2026-10-28"
+account_id = "6773d87fb532b608309922e5c920d474"
+workers_dev = true
+
+[build]
+command = "node build.mjs"
+
+[assets]
+directory = "../photos-web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[vars]
+PUBLIC_ORIGIN = "https://photos-app.0143crazy.workers.dev"
+GOOGLE_CLIENT_ID = "163251818347-4vqh8gvrdp546qaj8b3ic1qvk994j8n8.apps.googleusercontent.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "photos-db"
+database_id = "f64cd71c-8730-4b83-8431-872a39cac484"
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["15 3 * * *"]
+
+[observability]
+enabled = false

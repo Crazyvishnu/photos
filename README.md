@@ -6,16 +6,27 @@ The interface is inspired by Google Photos. This is an independent app; its back
 
 | Project | Current configuration |
 | --- | --- |
-| App version | Android 2.0.1 (code 12), Web 2.0.0 |
+| App version | Android 2.0.4 (code 15), Web 2.0.0 |
 | Android package | `com.photosapp` |
 | Minimum Android version | Android 8.0 / API 26 |
 | Compile / target SDK | API 35 |
 | UI | Kotlin, XML views, Material Components, View Binding |
 | Storage | Google Drive originals, Room index, DataStore preferences |
 
-## Web version
+## Website and maintainer guide
 
-The repository now includes [Photos web](photos-web/README.md), a responsive React/TypeScript app using the same Drive library. It supports search/filtering, original uploads, favorites, date edits, Bin, account storage, settings and shared custom albums with Android 2.0. Run `npm ci`, `npm test` and `npm run build` inside `photos-web`. The included Pages workflow targets `https://crazyvishnu.github.io/photos/`; hosting and Google OAuth origins must be enabled before live sign-in. See the web README for exact configuration and browser limits.
+**Primary website:** https://photos-app.0143crazy.workers.dev
+
+The Cloudflare Worker serves the React website and a same-origin Google authorization backend. D1 stores browser sessions and encrypted credentials; originals remain in Google Drive. Each browser must connect the accounts containing its backups. The older GitHub Pages site remains a static compatibility build and cannot renew expired Google tokens itself.
+
+Start with these guides before changing code:
+
+- [AI and developer repair guide](docs/MAINTENANCE.md): system map, invariants, diagnosis, regression checks, known gaps and handoff template.
+- [Web client](photos-web/README.md): local development, media caching and sync contracts.
+- [Cloudflare backend](photos-cloudflare/README.md): secrets, OAuth callback, D1 migrations and deployment.
+- [REA review](REA-REVIEW.md): scope and limitations of the reference APK analysis.
+
+Publishing source to GitHub does **not** deploy the Cloudflare Worker. Its deployment is a separate command. The Pages workflow only updates the older static site.
 
 ## Contents
 
@@ -297,7 +308,7 @@ photos/
 
 Main libraries include Room 2.6.1, WorkManager 2.9.1, DataStore 1.1.1, Retrofit 2.11.0, OkHttp 4.12.0, Coil 2.7.0 and Media3 ExoPlayer 1.8.0. These are the checked-in versions, not claims that they are the newest releases.
 
-The active Drive client uses `https://www.googleapis.com/` directly and the production Android manifest rejects cleartext HTTP traffic. No LAN backend or development base URL is required.
+`BuildConfig.BASE_URL` and a LAN cleartext network configuration remain from earlier development. The active Drive client uses `https://www.googleapis.com/` directly; no LAN server is required. Review unused development configuration before production distribution.
 
 ## Permissions and privacy
 
@@ -330,11 +341,11 @@ Room caches account/library metadata and resumable session URLs on the device. R
 
 ## Validation and known limitations
 
-The latest local Windows verification for 2.0.0 completed `:app:assembleDebug` and `:app:lintDebug` with **BUILD SUCCESSFUL**: **0 lint errors and 206 warnings**. APK signing/package checks confirmed `com.photosapp`, version code 11 and version 2.0.0. Existing warnings include deprecated account APIs and UI/resource issues; this is an actively developed app rather than a production-certified release.
+As of 2026-10-29, the latest web suite has **35 passing tests** and the backend suite has **13 passing tests**. The backend-enabled TypeScript/Vite production build and Cloudflare deployment succeeded. Android 2.0.4 passed local debug assembly and lint on 2026-10-29; Android build success is not proof of behavior on a phone.
 
-No connected phone or installed emulator was available for live validation. ARTEMIS diagnostics also reported missing local LLM credentials. No executable UI tests were authored without the required prior device exploration. Successful phone uploads, exact viewer appearance, reinstall recovery and two-device synchronization still need hardware verification.
+Google sign-in reached the deployed callback. The browser used for inspection showed zero media under the connected account, so real-library original prefetch, long-term token renewal and video playback remain unverified. Do not report these as proven by mocked tests. Known issues and precise reproduction steps belong in the [repair guide](docs/MAINTENANCE.md).
 
-Before relying on a release, verify on authorized devices: first upload; large-video interruption/resume; account overflow; mobile-data policy; selected-media access; same-content deduplication; second-device recovery; viewer seeking/immersive transitions; shared-file dates; and Bin restore/permanent deletion. Use ARTEMIS exploration before writing UI tests, with explicit waits and dynamic element locators.
+No connected authorized phone or configured ARTEMIS runtime was available for device validation. Before writing Android UI tests, explore the real screens with ARTEMIS. Verify backup scheduling, repeated share batches, large-video interruption/resume, reinstall deduplication and two-device recovery on hardware.
 
 Other current limits:
 
@@ -353,6 +364,6 @@ Room migration 8 -> 9 retains existing records and adds a durable album synchron
 
 Android refreshes cloud media while its home screen is active every minute; the web app refreshes while visible when enabled in settings. Both also support manual refresh. Pending album writes use one unique worker rather than queuing a worker per media file. The phone build preserves its signing certificate for updating existing installations.
 
-Web validation: 28 automated checks passed for hashing, ranges, metadata, cursor failure handling, deletion guards, preview caching, visible-thumbnail scheduling, expired-link recovery, stalled-transfer timeouts and all 4,450 timeline items; TypeScript and Vite production build passed. The welcome/settings/album error states and theme persistence were inspected in the browser. A deliberately delayed original verified immediate thumbnail display and left/right photo navigation with controls hidden. These checks use mocked API data; live OAuth, transfer CORS and phone/web round trips still require explicit account authorization and hardware verification.
+Historical web validation: 28 automated checks passed for hashing, ranges, metadata, cursor failure handling, deletion guards, preview caching, visible-thumbnail scheduling, expired-link recovery, stalled-transfer timeouts and all 4,450 timeline items; TypeScript and Vite production build passed. The welcome/settings/album error states and theme persistence were inspected in the browser. A deliberately delayed original verified immediate thumbnail display and left/right photo navigation with controls hidden. These checks use mocked API data; live OAuth, transfer CORS and phone/web round trips still require explicit account authorization and hardware verification.
 
-Android 2.0.1 accepts successive share intents and serializes incoming batches while existing uploads continue. Copied originals and pending backup status remain in the local database; follow-up workers process subsequent batches. Web authorization survives refresh in the same tab until the Google access token expires. Closing the tab or revoking access can require reconnection.
+Android 2.0.1 accepts successive share intents and serializes incoming batches while existing uploads continue. Copied originals and pending backup status remain in the local database; follow-up workers process subsequent batches. On the legacy static website, web authorization survives refresh in the same tab until the Google access token expires. The Cloudflare website instead renews access server-side; cookie expiry, revoked grants or Google policy can still require reconnection.

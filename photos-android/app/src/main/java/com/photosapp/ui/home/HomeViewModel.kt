@@ -70,7 +70,8 @@ class HomeViewModel(
     private val mediaLoaded = MutableStateFlow(false)
     private val workManager = androidx.work.WorkManager.getInstance(appContext)
     private val runtime = combine(
-        workManager.getWorkInfosForUniqueWorkFlow("photo_backup_immediate"),
+        combine(workManager.getWorkInfosForUniqueWorkFlow("photo_backup_immediate"),
+            workManager.getWorkInfosForUniqueWorkFlow(com.photosapp.worker.BackupScheduler.AUTOMATIC)) { manual, automatic -> manual + automatic },
         workManager.getWorkInfosForUniqueWorkFlow(com.photosapp.worker.BackupWorker.WORK_NAME),
         ServiceLocator.prefs.backupPaused, ServiceLocator.prefs.wifiOnly, observeBackupNetwork(appContext)
     ) { manual, scheduled, paused, wifi, network ->
@@ -345,14 +346,15 @@ class HomeViewModel(
     }
 
     fun stopBackup() {
-        androidx.work.WorkManager.getInstance(appContext).cancelUniqueWork("photo_backup_immediate")
-        androidx.work.WorkManager.getInstance(appContext).cancelUniqueWork(com.photosapp.worker.BackupWorker.WORK_NAME)
+        automaticBackupJob?.cancel()
         viewModelScope.launch(Dispatchers.IO) {
+            // Persist pause before cancellation; concurrent discovery must see it.
             ServiceLocator.prefs.setBackupPaused(true)
+            workManager.cancelUniqueWork(com.photosapp.worker.BackupScheduler.AUTOMATIC)
+            workManager.cancelUniqueWork("photo_backup_immediate")
+            workManager.cancelUniqueWork(com.photosapp.worker.BackupWorker.WORK_NAME)
             val statuses = syncDao.getByState(SyncState.PENDING) + syncDao.getByState(SyncState.UPLOADING)
-            statuses.forEach {
-                syncDao.insert(it.copy(status = SyncState.IDLE))
-            }
+            statuses.forEach { syncDao.insert(it.copy(status = SyncState.IDLE)) }
         }
     }
 
@@ -393,7 +395,19 @@ class HomeViewModel(
         }
     }
 
+    private var automaticBackupJob: kotlinx.coroutines.Job? = null
+    private fun requestAutomaticBackup() {
+        automaticBackupJob?.cancel()
+        automaticBackupJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(1500)
+            try { com.photosapp.worker.BackupScheduler.ensure(appContext) }
+            catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { android.util.Log.e("BackupSchedule", "Unable to schedule backup; periodic recovery remains active", e) }
+        }
+    }
+
     fun loadPhotos() {
+        requestAutomaticBackup()
         photoLoadJob?.cancel()
         photoLoadJob = viewModelScope.launch(Dispatchers.IO) {
             try {

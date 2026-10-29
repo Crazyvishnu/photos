@@ -95,6 +95,7 @@ class SettingsFragment : Fragment() {
         }
     }
     private suspend fun schedule() {
+        com.photosapp.worker.BackupScheduler.ensure(requireContext())
         if (prefs.backupPaused.first() || prefs.localMode.first()) return
         androidx.work.WorkManager.getInstance(requireContext()).enqueueUniquePeriodicWork(com.photosapp.worker.BackupWorker.WORK_NAME,
             androidx.work.ExistingPeriodicWorkPolicy.UPDATE, com.photosapp.worker.BackupWorker.buildRequest(prefs.wifiOnly.first()))

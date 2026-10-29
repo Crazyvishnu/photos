@@ -1,0 +1,23 @@
+name: Check Cloudflare backend
+on:
+  push:
+    branches: [main]
+    paths: ['photos-cloudflare/**', 'photos-web/**', '.github/workflows/cloudflare-check.yml']
+  pull_request:
+    paths: ['photos-cloudflare/**', 'photos-web/**', '.github/workflows/cloudflare-check.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: photos-web/package-lock.json
+      - run: npm ci --prefix photos-web
+      - run: npm test --prefix photos-web
+      - run: node --test photos-cloudflare/test/worker.test.mjs
+      - run: node photos-cloudflare/build.mjs

@@ -1,13 +1,26 @@
 import { describe,expect,it,vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { PreviewCache } from './preview-cache';
+import { PreviewCache, nearbyPhotos } from './preview-cache';
 import { PhotoGrid } from './PhotoGrid';
 import type { Media } from './model';
 const photo=(id:string,email='test@example.test'):Media=>({id,email,name:`${id}.jpg`,mimeType:'image/jpeg',size:'5',createdTime:'2026-10-20T12:00:00Z'});
 const settle=()=>new Promise(resolve=>setTimeout(resolve,0));
 
 describe('Original preview cache',()=>{
+  it('prepares six photos ahead and two behind, excluding videos and boundaries',()=>{
+    const items=Array.from({length:10},(_,i)=>photo(String(i)));
+    expect(nearbyPhotos(items,2).map(m=>m.id)).toEqual(['3','1','4','0','5','6','7','8']);
+    items[3].mimeType='video/mp4';
+    expect(nearbyPhotos(items,0).map(m=>m.id)).toEqual(['1','2','4','5','6']);
+    expect(nearbyPhotos(items,9).map(m=>m.id)).toEqual(['8','7']);
+  });
+  it('prefetches large originals and reuses them without another transfer on swipe',async()=>{
+    const loader=vi.fn(async m=>({url:`blob:${m.id}`,bytes:20*1024*1024}));
+    const cache=new PreviewCache(loader,vi.fn());const large={...photo('large'),size:String(20*1024*1024)};
+    cache.prefetch(large);await settle();
+    expect(cache.peek(large)).toBe('blob:large');await cache.get(large);expect(loader).toHaveBeenCalledTimes(1);
+  });
   it('shares an in-flight download and reuses the completed original',async()=>{
     const loader=vi.fn(async()=>({url:'blob:original',bytes:5}));const cache=new PreviewCache(loader,vi.fn());
     const first=cache.get(photo('a'));expect(cache.get(photo('a'))).toBe(first);await first;
