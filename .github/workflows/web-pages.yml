@@ -29,6 +29,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Redirect old bookmarks to Cloudflare
+        run: node scripts/build-pages-redirect.mjs
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:

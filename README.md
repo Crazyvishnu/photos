@@ -17,7 +17,7 @@ The interface is inspired by Google Photos. This is an independent app; its back
 
 **Primary website:** https://photos-app.0143crazy.workers.dev
 
-The Cloudflare Worker serves the React website and a same-origin Google authorization backend. D1 stores browser sessions and encrypted credentials; originals remain in Google Drive. Each browser must connect the accounts containing its backups. The older GitHub Pages site remains a static compatibility build and cannot renew expired Google tokens itself.
+The Cloudflare Worker serves the React website and a same-origin Google authorization backend. D1 stores browser sessions and encrypted credentials; originals remain in Google Drive. Each browser must connect the accounts containing its backups. The older GitHub Pages address redirects to Cloudflare, preventing old bookmarks from opening the temporary-token login flow. Connect each backup account once on the Cloudflare origin; old-site cookies cannot be transferred across origins.
 
 Start with these guides before changing code:
 
@@ -26,7 +26,7 @@ Start with these guides before changing code:
 - [Cloudflare backend](photos-cloudflare/README.md): secrets, OAuth callback, D1 migrations and deployment.
 - [REA review](REA-REVIEW.md): scope and limitations of the reference APK analysis.
 
-Publishing source to GitHub does **not** deploy the Cloudflare Worker. Its deployment is a separate command. The Pages workflow only updates the older static site.
+Publishing source to GitHub does **not** deploy the Cloudflare Worker. Its deployment is a separate command. The Pages workflow publishes the old-address redirect.
 
 ## Contents
 

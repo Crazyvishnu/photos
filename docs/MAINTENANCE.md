@@ -80,7 +80,7 @@ Google can revoke refresh tokens, Testing-mode consent can limit token lifetime,
 ## Deployment and rollback
 
 Primary URL: https://photos-app.0143crazy.workers.dev
-Legacy static URL: https://crazyvishnu.github.io/photos/
+Old bookmark URL (redirects to Cloudflare): https://crazyvishnu.github.io/photos/
 
 From the repository root, after checks:
 
@@ -93,7 +93,7 @@ Review pending migrations first; never drop production tables to fix a migration
 
 After deployment, verify health, connect a backup-owning account, reload, inspect thumbnail/original requests, swipe both directions, play/seek a known compatible video, and exercise account isolation. Do not delete real user photos for a smoke test. Record the deployed version and results. Roll back using Cloudflare deployment history to a known working Worker/assets version; do not rotate encryption keys or delete D1 to roll back code.
 
-Pushing `main` triggers the separate static Pages workflow when web files change. It does not deploy Cloudflare. CI debug APKs may have a different debug signing key from a local installation; never recommend uninstalling without explaining loss of local state and unfinished uploads.
+Pushing `main` triggers the Pages redirect workflow when web files change. It validates the web app, then replaces the Pages entry documents with a fixed redirect to Cloudflare. It does not deploy Cloudflare. Do not remove this redirect and accidentally reintroduce the temporary-token app at the old address. CI debug APKs may have a different debug signing key from a local installation; never recommend uninstalling without explaining loss of local state and unfinished uploads.
 
 ## Current evidence and open validation gaps (2026-10-29)
 

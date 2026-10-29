@@ -1,6 +1,6 @@
 # Photos App for the web
 
-A responsive React/TypeScript website using the same Google Drive library as Android. The primary deployment uses the same-origin Cloudflare backend for Google authorization and streamed media. A static GitHub Pages compatibility build remains available. See [backend setup](../photos-cloudflare/README.md) and the [repair guide](../docs/MAINTENANCE.md).
+A responsive React/TypeScript website using the same Google Drive library as Android. The primary deployment uses the same-origin Cloudflare backend for Google authorization and streamed media. The old GitHub Pages address redirects to Cloudflare. Local builds can still use legacy static mode for development. See [backend setup](../photos-cloudflare/README.md) and the [repair guide](../docs/MAINTENANCE.md).
 
 ## Run locally
 
@@ -76,7 +76,7 @@ Album conflict resolution uses the newest timestamp. It is not collaborative edi
 
 ## Hosting without a student ID
 
-GitHub Pages provides the project address `https://crazyvishnu.github.io/photos/` without domain registration. This is a subdomain/project path, not an owned second-level domain. The workflow in `../.github/workflows/web-pages.yml` builds/tests the site and deploys `dist/`.
+GitHub Pages provides the project address `https://crazyvishnu.github.io/photos/` without domain registration. This is a subdomain/project path, not an owned second-level domain. The workflow in `../.github/workflows/web-pages.yml` validates the app, then generates `dist/index.html` and `404.html` with a redirect to the canonical Cloudflare address using `scripts/build-pages-redirect.mjs`. It does not publish the temporary-token app at the old address.
 
 In repository Settings > Pages, select **GitHub Actions** as the source. Push to `main` or run the workflow manually. The website is not live until Pages is enabled and deployment succeeds.
 
