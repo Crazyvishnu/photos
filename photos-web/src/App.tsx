@@ -3,13 +3,14 @@ import { createContext, useContext, useCallback, useEffect, useMemo, useRef, use
 import { Image as ImageIcon, Cloud, CloudUpload, Images, Star, Video, Monitor, FileText, Trash2, Settings2, Search, Plus, X, Check, RefreshCw, HardDrive, ArrowLeft, ArrowRight, Download, Info, CalendarDays, CheckCircle2, Pause, Play, ExternalLink, Menu, LogOut, Sun, HelpCircle, AlertCircle, FolderPlus, MoreHorizontal, Link2 } from 'lucide-react';
 import { authorize, connected, removeAuthorization, backendEnabled, restoreAccounts, loadGoogle } from './auth';
 import { allConnected, changeMedia, refreshAccount, saveAlbum } from './drive';
-import { capturedAt, keyOf, favorite, bytes, ordered, defaultSettings, type Media, type Account, type Album, type Cache, type Settings } from './model';
+import { capturedAt, keyOf, favorite, SCREEN_DERIVATIVE_KEY, bytes, ordered, defaultSettings, type Media, type Account, type Album, type Cache, type Settings } from './model';
 import { load, save } from './store';
 import { uploadOriginal, type UploadProgress } from './upload';
 import { photoPreviews, nearbyPhotos, type PreviewCache } from './preview-cache';
 import { PhotoGrid } from './PhotoGrid';
 import { Thumbnail } from './Thumbnail';
 import { thumbnails } from './thumbnail-cache';
+import { derivativeBlob } from './derivative-cache';
 const ErrorContext=createContext('');
 type Page='photos'|'albums'|'favorites'|'videos'|'screenshots'|'documents'|'bin'|'storage'|'settings';
 type Task={id:string;file:File;status:'waiting'|'working'|'done'|'failed'|'paused';progress:UploadProgress;error?:string};
@@ -23,6 +24,16 @@ export function Viewer({media,index,items,close,onMove,onAction,busy,previews=ph
   useEffect(()=>()=>previews.stop(),[previews]);
   useEffect(()=>{const previous=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.body.style.overflow=previous;};},[]);
   const [immersive,setImmersive]=useState(false),[details,setDetails]=useState(false),[attempt,setAttempt]=useState(0);
+  const [screen,setScreen]=useState({key:'',url:''});
+  useEffect(()=>{
+    if(video||previews.peek(media))return;
+    const controller=new AbortController();let active=true,objectUrl='';const image=new Image();image.referrerPolicy='no-referrer';
+    image.onload=()=>{if(active)setScreen({key:identity,url:image.src});};
+    const id=media.appProperties?.[SCREEN_DERIVATIVE_KEY];
+    const fallback=()=>{if(active&&backendEnabled)image.src='/api/thumbnail?'+new URLSearchParams({email:media.email,id:media.id,size:'1600'});};
+    if(id)void derivativeBlob(media.email,id,controller.signal).then(blob=>{if(!active)return;objectUrl=URL.createObjectURL(blob);image.src=objectUrl;}).catch(fallback);else fallback();
+    return()=>{active=false;controller.abort();image.onload=null;image.removeAttribute('src');if(objectUrl)URL.revokeObjectURL(objectUrl);};
+  },[identity,video,attempt,previews]);
   const touchStart=useRef<{x:number;y:number}|null>(null);
   const [original,setOriginal]=useState({key:'',url:''}),[decoded,setDecoded]=useState(''),[error,setError]=useState({key:'',text:''});
   const url=original.key===identity?original.url:previews.peek(media);
@@ -40,6 +51,7 @@ export function Viewer({media,index,items,close,onMove,onAction,busy,previews=ph
   return <Dialog title={media.name} className={`viewer ${immersive?'immersive':''}`} close={close}><div className="viewer-toolbar"><IconButton label="Back to library" onClick={close}><ArrowLeft/></IconButton><button className="date-button" onClick={()=>onAction(media,'date')} disabled={busy}><strong>{new Date(capturedAt(media)).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'})}</strong><small>{new Date(capturedAt(media)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</small></button><div className="spacer"/><IconButton label={favorite(media)?'Remove favorite':'Add favorite'} disabled={busy} onClick={()=>onAction(media,'favorite')}><Star fill={favorite(media)?'currentColor':'none'}/></IconButton><IconButton label="Photo details" onClick={()=>setDetails(!details)}><Info/></IconButton></div>
     <div className="viewer-canvas">{video?<div className="video-canvas">{url?<video key={identity+url+attempt} src={url} controls playsInline autoPlay onError={e=>{const code=e.currentTarget.error?.code;setError({key:identity,text:code===2?'The video connection failed. Retry or reconnect its account.':code===3?'The browser could not decode this video. Open in Drive to use its converted preview.':'The stream or video format could not be opened. Retry or open in Drive.'});}}/>:<p role="status">Connecting video stream...</p>}{message&&<div className="preview-notice" role="alert">{message}<button onClick={retry}>Retry video</button><a href={`https://drive.google.com/file/d/${media.id}/view`} target="_blank" rel="noreferrer">Play in Drive</a></div>}</div>:<div className="image-canvas" style={{touchAction:'pan-y'}} onTouchStart={e=>{touchStart.current={x:e.touches[0].clientX,y:e.touches[0].clientY};}} onTouchEnd={e=>{const start=touchStart.current;touchStart.current=null;if(!start)return;const dx=e.changedTouches[0].clientX-start.x,dy=e.changedTouches[0].clientY-start.y;if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy))return;const next=index+(dx<0?1:-1);if(next>=0&&next<items.length){if(e.cancelable)e.preventDefault();onMove(items[next]);}}}>
       <Thumbnail media={media} className="viewer-thumbnail-layer"/>
+      {screen.key===identity&&screen.url&&<img className="viewer-original ready" src={screen.url} alt={media.name} referrerPolicy="no-referrer"/>}
       {url&&<img key={url} className={`viewer-original ${decoded===url||previews.peek(media)===url?'ready':''}`} src={url} alt={media.name} decoding="async" onLoad={()=>setDecoded(url)} onError={()=>setError({key:identity,text:'This browser could not display the original format. You can still download it or open it in Drive.'})}/>}
 
       <button className="viewer-hit previous" aria-label="Previous photo (left side)" disabled={index<=0} onClick={()=>onMove(items[index-1])}/>

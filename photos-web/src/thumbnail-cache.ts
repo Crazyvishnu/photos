@@ -58,15 +58,15 @@ function readImage(url:string,signal:AbortSignal,priority:number):Promise<HTMLIm
     const clean=()=>{clearTimeout(timer);image.onload=null;image.onerror=null;signal.removeEventListener('abort',abort);};
     const fail=(error:unknown)=>{clean();image.removeAttribute('src');reject(error);};
     const abort=()=>fail(new DOMException('Aborted','AbortError'));
-    const timer=setTimeout(()=>fail(new Error('Preview request timed out.')),8000);
+    const timer=setTimeout(()=>fail(new Error('Preview request timed out.')),15000);
     image.onload=()=>{clean();resolve(image);};image.onerror=()=>fail(new Error('Preview link is unavailable.'));
     signal.addEventListener('abort',abort,{once:true});image.src=url;
   });
 }
 export async function loadThumbnail(m:Media,signal:AbortSignal,priority:number){
-  if(backendEnabled)return readImage('/api/thumbnail?'+new URLSearchParams({email:m.email,id:m.id}),signal,priority);
   const derivativeId=m.appProperties?.[GRID_DERIVATIVE_KEY];
   if(derivativeId&&connected(m.email)){try{return await readBlobImage(await derivativeBlob(m.email,derivativeId,signal),signal,priority);}catch(e){if(signal.aborted)throw e;}}
+  if(backendEnabled)return readImage('/api/thumbnail?'+new URLSearchParams({email:m.email,id:m.id}),signal,priority);
   if(m.thumbnailLink){try{return await readImage(m.thumbnailLink,signal,priority);}catch(e){if(signal.aborted)throw e;}}
   if(!connected(m.email))throw new Error('Reconnect this account to refresh its preview.');
   // Drive thumbnail links expire without a media change. Refresh only this visible file.

@@ -57,3 +57,34 @@ test('setup health is public but protected endpoints fail closed without secrets
 test('expired session cleanup deletes associated credentials and OAuth states',async t=>{
  const {env,db}=fixture(t),session=await owner(db);await account(env,db,session);db.prepare('UPDATE sessions SET expires=0').run();await worker.scheduled({},env);assert.equal(db.prepare('SELECT count(*) AS n FROM accounts').get().n,0);
 });
+
+test('private thumbnails receive authorization and return actual image bytes',async t=>{
+ const {env,db}=fixture(t),session=await owner(db);await account(env,db,session);const calls=[];
+ globalThis.fetch=async(input,init)=>{const url=new URL(input);calls.push(url.hostname);assert.equal(new Headers(init.headers).get('Authorization'),'Bearer access-secret');
+  if(url.hostname==='www.googleapis.com')return Response.json({thumbnailLink:'https://lh3.googleusercontent.com/private=s220'});
+  assert.equal(url.search,'');assert.ok(url.href.endsWith('=s320'));return new Response(new Uint8Array([1,2,3]),{headers:{'Content-Type':'image/jpeg'}});
+ };
+ const response=await worker.fetch(req('/api/thumbnail?email=a%40example.test&id=photo',{headers:{Cookie:session.cookie}}),env);
+ assert.equal(response.status,200);assert.equal(response.headers.get('Content-Type'),'image/jpeg');assert.equal((await response.arrayBuffer()).byteLength,3);assert.deepEqual(calls,['www.googleapis.com','lh3.googleusercontent.com']);
+});
+
+test('thumbnail redirects never send credentials to an untrusted destination',async t=>{
+ const {env,db}=fixture(t),session=await owner(db);await account(env,db,session);let calls=0;
+ globalThis.fetch=async(input)=>{calls++;const url=new URL(input);if(url.hostname==='www.googleapis.com')return Response.json({thumbnailLink:'https://lh3.googleusercontent.com/private'});assert.equal(url.hostname,'lh3.googleusercontent.com');return new Response(null,{status:302,headers:{Location:'https://evil.example.test/collect'}});};
+ assert.equal((await worker.fetch(req('/api/thumbnail?email=a%40example.test&id=photo',{headers:{Cookie:session.cookie}}),env)).status,502);assert.equal(calls,2);
+});
+
+test('a successful HTML error page is not treated as a photo',async t=>{
+ const {env,db}=fixture(t),session=await owner(db);await account(env,db,session);
+ globalThis.fetch=async input=>new URL(input).hostname==='www.googleapis.com'?Response.json({thumbnailLink:'https://lh3.googleusercontent.com/private'}):new Response('<html>Sign in</html>',{headers:{'Content-Type':'text/html'}});
+ assert.equal((await worker.fetch(req('/api/thumbnail?email=a%40example.test&id=photo',{headers:{Cookie:session.cookie}}),env)).status,502);
+});
+
+test('compressed Drive responses retain their encoding and do not copy an unsafe length',async t=>{
+ const {gzipSync,gunzipSync}=await import('node:zlib');const {env,db}=fixture(t),session=await owner(db);await account(env,db,session);
+ const body=gzipSync(JSON.stringify({files:[{id:'one'}]}));
+ globalThis.fetch=async()=>new Response(body,{headers:{'Content-Type':'application/json','Content-Encoding':'gzip','Content-Length':String(body.length)}});
+ const response=await worker.fetch(req('/api/drive?email=a%40example.test&path=drive%2Fv3%2Ffiles',{headers:{Cookie:session.cookie}}),env);
+ assert.equal(response.headers.get('Content-Encoding'),'gzip');assert.equal(response.headers.get('Content-Length'),null);
+ assert.deepEqual(JSON.parse(gunzipSync(new Uint8Array(await response.arrayBuffer())).toString()),{files:[{id:'one'}]});
+});

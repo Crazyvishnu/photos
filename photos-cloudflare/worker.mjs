@@ -63,9 +63,11 @@ async function drive(env,owner,email,path,init={}) {
  return response;
 }
 function relay(response) {
- const headers=new Headers();for(const name of ['Content-Type','Content-Length','Content-Range','Accept-Ranges','Range','Location','Retry-After']){const v=response.headers.get(name);if(v)headers.set(name,v);}
+ const headers=new Headers();for(const name of ['Content-Type','Content-Encoding','Content-Range','Accept-Ranges','Range','Location','Retry-After']){const v=response.headers.get(name);if(v)headers.set(name,v);}
  headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');
- return new Response(response.body,{status:response.status,headers});
+ // Preserve the upstream representation. Dropping Content-Encoding from a
+ // streamed gzip body breaks browser fetch; copying its old length is unsafe.
+ return new Response(response.body,{status:response.status,headers,encodeBody:'manual'});
 }
 async function route(req,env) {
  const url=new URL(req.url);if(!url.pathname.startsWith('/api/'))return env.ASSETS.fetch(req);
@@ -124,9 +126,12 @@ async function route(req,env) {
   if(!metadata.ok)return relay(metadata);const file=await metadata.json();if(!file.thumbnailLink)throw new Failure(404,'Preview is not ready.');
   const size=Math.max(160,Math.min(1600,Number(url.searchParams.get('size'))||320));let target=new URL(file.thumbnailLink.replace(/=s\d+(?:-[a-z]+)?$/i,'=s'+size));
   for(let count=0;count<4;count++){
-   if(target.protocol!=='https:'||!(target.hostname==='googleusercontent.com'||target.hostname.endsWith('.googleusercontent.com')))throw new Failure(502,'Unexpected preview host.');
-   const image=await fetch(target,{redirect:'manual',signal:req.signal});
+   if(target.protocol!=='https:'||target.username||target.password||target.port||!(target.hostname==='googleusercontent.com'||target.hostname.endsWith('.googleusercontent.com')))throw new Failure(502,'Unexpected preview host.');
+   // Drive thumbnails for private files require credentials too. Validate each
+   // redirect before attaching the token; never follow a redirect implicitly.
+   const image=await fetch(target,{redirect:'manual',headers:{Authorization:'Bearer '+await access(env,owner,email)},signal:req.signal});
    if([301,302,303,307,308].includes(image.status)&&image.headers.has('Location')){await image.body?.cancel();target=new URL(image.headers.get('Location'),target);continue;}
+   if(image.ok&&!image.headers.get('Content-Type')?.startsWith('image/')){await image.body?.cancel();throw new Failure(502,'Google did not return a preview image.');}
    return relay(image);
   }throw new Failure(502,'Preview redirect limit reached.');
  }

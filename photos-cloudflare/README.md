@@ -45,3 +45,9 @@ The GitHub Pages build remains static when this environment flag is absent. It c
 `node --test photos-cloudflare/test/worker.test.mjs` exercises the Worker against a real in-memory SQLite schema with a D1 adapter and mocked Google HTTP responses. This verifies local behavior; it does not prove real OAuth consent or real media playback. `npm.cmd --prefix photos-web test` covers frontend regressions and backend session restoration. Run Wrangler's deployment dry-run as well.
 
 No secret is included in this repository. `.dev.vars*` and `.wrangler/` must remain ignored. Never commit local database files or Google credential downloads.
+
+## Private preview authentication repair (2026-10-30)
+
+Drive thumbnailLink values for private files require an authenticated request. The Worker attaches the owning account token only after validating the Google-hosted image URL, validates every redirect, and rejects successful non-image responses. Never fetch private thumbnails anonymously or expose bearer tokens in image URLs. The client tries existing optimized grid copies before another backend thumbnail and uses a screen preview while the unchanged original downloads.
+
+The streaming proxy preserves upstream Content-Encoding with manual encoding and omits the upstream Content-Length so compressed bodies cannot be mislabeled or carry an unsafe length. A regression test relays gzip JSON and verifies its header/body representation. Cloudflare reference: https://developers.cloudflare.com/workers/runtime-apis/fetch/ .
