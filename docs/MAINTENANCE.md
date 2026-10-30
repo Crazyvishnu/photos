@@ -97,7 +97,7 @@ Pushing `main` triggers the Pages redirect workflow when web files change. It va
 
 ## Current evidence and open validation gaps (2026-10-29)
 
-- Web: 43 passing automated checks; TypeScript/Vite static and backend-enabled builds passed.
+- Web: 46 passing automated checks; TypeScript/Vite static and backend-enabled builds passed.
 - Worker: 13 passing tests with in-memory SQLite and mocked Google responses.
 - Cloudflare deployed version at the last media update: `f2cb1a03-0e13-4f1d-8f63-43a22a5835cb` (verify dashboard for newer versions).
 - Google callback was reached. Real-library prefetch/playback and renewal after token expiry were not verified; connected inspection account showed zero items and a saved-library/reconnect status after reload. Investigate this status rather than declaring persistent access solved.
@@ -111,3 +111,9 @@ Before publishing, fetch the current remote branch and compare all source and te
 ## Handoff format for every repair
 
 Record: exact symptom; app version/URL/build mode; reproducible steps; sanitized error/status and timing; source cause; changed files; tests run and their actual results; deployment version; checks not run and why; remaining risks. Keep secrets and personal media out of the report. Prefer a targeted fix and a regression test that would fail before the fix. Never claim all possible test cases pass.
+
+## Date-edit troubleshooting update (2026-10-30)
+
+Android 2.0.5 requires a matching capture date and edit version in the Drive PATCH response before acknowledging a pending edit. HTTP 404/410 or missing account access remains pending. Package update requeues stored corrections for version-aware reconciliation; boot restores the date worker independently of backup pause. Web startup now reads changes immediately, and visible auto-refresh runs every 30 seconds; open viewer metadata also updates. The regression suite includes an incremental phone date change that reorders the timeline. Build checks do not establish successful on-device propagation; verify a named original with an explicit target date on authorized hardware.
+
+Startup and manual Sync library perform a fresh metadata listing and then drain changes from a token captured before that listing. This repairs stale cursor history without reuploading originals. Automatic 30-second refresh remains incremental to avoid repeatedly relisting the entire library. A failed listing retains the previous usable index and cursor.

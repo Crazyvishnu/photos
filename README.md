@@ -6,7 +6,7 @@ The interface is inspired by Google Photos. This is an independent app; its back
 
 | Project | Current configuration |
 | --- | --- |
-| App version | Android 2.0.4 (code 15), Web 2.0.0 |
+| App version | Android 2.0.5 (code 16), Web 2.0.0 |
 | Android package | `com.photosapp` |
 | Minimum Android version | Android 8.0 / API 26 |
 | Compile / target SDK | API 35 |
@@ -341,7 +341,7 @@ Room caches account/library metadata and resumable session URLs on the device. R
 
 ## Validation and known limitations
 
-As of 2026-10-29, the latest web suite has **43 passing tests** and the backend suite has **13 passing tests**. The backend-enabled TypeScript/Vite production build and Cloudflare deployment succeeded. Android 2.0.4 passed local debug assembly and lint on 2026-10-29; Android build success is not proof of behavior on a phone.
+As of 2026-10-29, the latest web suite has **46 passing tests** and the backend suite has **13 passing tests**. The backend-enabled TypeScript/Vite production build and Cloudflare deployment succeeded. Android 2.0.4 passed local debug assembly and lint on 2026-10-29; Android build success is not proof of behavior on a phone.
 
 Google sign-in reached the deployed callback. The browser used for inspection showed zero media under the connected account, so real-library original prefetch, long-term token renewal and video playback remain unverified. Do not report these as proven by mocked tests. Known issues and precise reproduction steps belong in the [repair guide](docs/MAINTENANCE.md).
 
@@ -367,3 +367,9 @@ Android refreshes cloud media while its home screen is active every minute; the 
 Historical web validation: 28 automated checks passed for hashing, ranges, metadata, cursor failure handling, deletion guards, preview caching, visible-thumbnail scheduling, expired-link recovery, stalled-transfer timeouts and all 4,450 timeline items; TypeScript and Vite production build passed. The welcome/settings/album error states and theme persistence were inspected in the browser. A deliberately delayed original verified immediate thumbnail display and left/right photo navigation with controls hidden. These checks use mocked API data; live OAuth, transfer CORS and phone/web round trips still require explicit account authorization and hardware verification.
 
 Android 2.0.1 accepts successive share intents and serializes incoming batches while existing uploads continue. Copied originals and pending backup status remain in the local database; follow-up workers process subsequent batches. On the legacy static website, web authorization survives refresh in the same tab until the Google access token expires. The Cloudflare website instead renews access server-side; cookie expiry, revoked grants or Google policy can still require reconnection.
+
+## Date synchronization repair (2.0.5)
+
+Phone date edits stay in the durable journal until Drive confirms both capture date and edit version. Missing access or a missing file no longer counts as successful sync. Updating the app requeues stored corrections for version-aware reconciliation; newer remote edits win. The website refreshes on startup, focus/network return and every 30 seconds while visible when automatic refresh is enabled, including the date shown in an open viewer. A correction on media not yet backed up cannot reach the website until the original has a linked Drive copy.
+
+Startup and manual Sync library perform a fresh metadata listing and then drain changes from a token captured before that listing. This repairs stale cursor history without reuploading originals. Automatic 30-second refresh remains incremental to avoid repeatedly relisting the entire library. A failed listing retains the previous usable index and cursor.

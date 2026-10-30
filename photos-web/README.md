@@ -51,7 +51,7 @@ To use another project, set `VITE_GOOGLE_CLIENT_ID` in an untracked `.env.local`
 - Instant available-thumbnail fallback while originals download, bounded session-only original caching, and original prefetch up to six items ahead and two behind (excluding videos). Originals are decoded before caching. Swipe horizontally, use arrow keys or click the left/right areas to browse. At most two originals transfer concurrently; first-time retrieval and swiping faster than downloads can still reveal the thumbnail. Left/right photo areas navigate; the center toggles controls in white/black view.
 - Image viewer, original downloads, Google Drive video previews, favorites and editable timeline dates.
 - Bulk selection, custom albums, automatic collections, Bin, restoration and confirmed permanent deletion.
-- Light/dark/system appearance, backup badges, upload destination, optional minute refresh, keyboard shortcuts and metadata-index export.
+- Light/dark/system appearance, backup badges, upload destination, optional 30-second refresh, keyboard shortcuts and metadata-index export.
 - Android 2.0 shared album support. Earlier Android clients can sync media metadata but do not read the album manifests.
 
 ## Sync contract

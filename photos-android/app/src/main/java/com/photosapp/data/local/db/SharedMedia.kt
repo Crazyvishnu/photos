@@ -41,6 +41,10 @@ abstract class MediaDateDao {
     abstract fun get(key: String): MediaDate?
     @Query("SELECT * FROM media_dates WHERE pendingSync = 1")
     abstract fun pending(): List<MediaDate>
+    // Reconcile corrections that older versions may have acknowledged on HTTP
+    // errors. The worker compares versions before writing anything to Drive.
+    @Query("UPDATE media_dates SET pendingSync = 1")
+    abstract fun reconcileAfterUpdate()
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract fun insert(date: MediaDate)
     @Transaction

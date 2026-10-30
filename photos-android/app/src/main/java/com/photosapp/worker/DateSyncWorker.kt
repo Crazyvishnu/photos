@@ -25,7 +25,9 @@ class DateSyncWorker(context: Context, params: WorkerParameters) : CoroutineWork
                 "drive:${status.accountEmail}:${status.driveFileId}"
             }
             val parts = remoteKey.split(':', limit = 3)
-            if (parts.size != 3 || db.accountDao().getAccount(parts[1]) == null) continue
+            if (parts.size != 3) continue
+            // Keep a durable retry when the owner temporarily needs reconnecting.
+            if (db.accountDao().getAccount(parts[1]) == null) { failed = true; continue }
             // An edit may have happened while this work was queued. Always send the newest alias.
             val latest = listOfNotNull(db.mediaDateDao().get(remoteKey), db.mediaDateDao().get(pending.mediaKey)).maxBy { it.updatedAt }
             try {
@@ -44,19 +46,20 @@ class DateSyncWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     val properties = mutableMapOf<String, String>().apply {
                         put("capturedAt", latest.capturedAt.toString()); put("dateEditedAt", latest.updatedAt.toString()); put("dateSource", "edited")
                     }
-                    api.updateFileMetadata(parts[2], JSONObject().put("appProperties", JSONObject(properties)).toString()
+                    val saved = api.updateFileMetadata(parts[2], JSONObject().put("appProperties", JSONObject(properties)).toString()
                         .toRequestBody("application/json; charset=utf-8".toMediaType()))
+                    check(saved.appProperties?.get("capturedAt")?.toLongOrNull() == latest.capturedAt &&
+                        saved.appProperties?.get("dateEditedAt")?.toLongOrNull() == latest.updatedAt) {
+                        "Drive has not confirmed the edited date yet"
+                    }
                 }
                 db.cloudMediaDao().updateDate(parts[1], parts[2], latest.capturedAt, latest.updatedAt)
                 db.mediaDateDao().markSynced(pending.mediaKey, pending.updatedAt)
                 db.mediaDateDao().markSynced(remoteKey, latest.updatedAt)
             } catch (error: CancellationException) { throw error }
-            catch (error: retrofit2.HttpException) {
-                if (error.code() == 404 || error.code() == 410) {
-                    db.mediaDateDao().markSynced(pending.mediaKey, pending.updatedAt)
-                    db.mediaDateDao().markSynced(remoteKey, latest.updatedAt)
-                } else failed = true
-            }
+            // Missing access/file is not an acknowledgement of the date edit.
+            // Leave the journal pending so reconnect/retry can recover it.
+            catch (_: retrofit2.HttpException) { failed = true }
             catch (_: Exception) { failed = true }
         }
         if (failed) Result.retry() else Result.success()

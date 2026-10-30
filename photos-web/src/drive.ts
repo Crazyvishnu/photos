@@ -17,11 +17,11 @@ export async function json<T>(email:string,path:string,init:RequestInit={},signa
 export async function listing(email:string,q:string):Promise<DriveFile[]> { const files:DriveFile[]=[];let page:string|undefined; do{const p=new URLSearchParams({q,fields:`nextPageToken,files(${fields})`,pageSize:'1000',...(page?{pageToken:page}:{})});const r=await json<{files?:DriveFile[];nextPageToken?:string}>(email,`drive/v3/files?${p}`);files.push(...(r.files||[]));page=r.nextPageToken;}while(page);return files; }
 const marked=`(appProperties has { key='library' and value='${MEDIA_MARKER}' } or appProperties has { key='library' and value='${ALBUM_MARKER}' })`;
 async function readAlbum(email:string,f:DriveFile){if(Number(f.size)>5*1024*1024) throw new Error(`Album ${f.name} is too large.`);return validateAlbum(await json(email,`drive/v3/files/${encodeURIComponent(f.id)}?alt=media`),email,f.id);}
-export async function refreshAccount(account:Account):Promise<{account:Account;cache:Cache}> {
+export async function refreshAccount(account:Account,reconcile=false):Promise<{account:Account;cache:Cache}> {
   const email=account.email;let cache=await load<Cache>(`cache:${email}`,{media:[],albums:[]});
   const about=await json<{storageQuota:{limit?:string;usage:string}}>(email,'drive/v3/about?fields=storageQuota');
   const nextAccount={...account,limit:about.storageQuota.limit ? Number(about.storageQuota.limit):null,usage:Number(about.storageQuota.usage)||0};
-  if(!cache.cursor){
+  if(!cache.cursor||reconcile){
     const start=await json<{startPageToken:string}>(email,'drive/v3/changes/startPageToken');
     const files=await listing(email,marked);const albums:Album[]=[];
     for(const f of files.filter(f=>f.appProperties?.library===ALBUM_MARKER&&!f.trashed)) albums.push(await readAlbum(email,f));
